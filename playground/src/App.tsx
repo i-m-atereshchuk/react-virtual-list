@@ -1,4 +1,4 @@
-import { VirtualList } from "react-virtual-list";
+import { VirtualList } from "react-virtual-lite";
 
 function App() {
   return (

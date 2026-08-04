@@ -17,8 +17,8 @@
     "noFallthroughCasesInSwitch": true,
 
     "paths": {
-      "react-virtual-list": ["../packages/react-virtual-list/src/index.ts"],
-      "react-virtual-list/*": ["../packages/react-virtual-list/src/*"]
+      "react-virtual-lite": ["../packages/react-virtual-lite/src/index.ts"],
+      "react-virtual-lite/*": ["../packages/react-virtual-lite/src/*"]
     }
   },
   "include": ["src"]
