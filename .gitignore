@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.vscode
+.idea
+
+playground/node_modules
+playground/dist
+
+*.log

@@ -1,0 +1,34 @@
+{
+  "name": "react-virtual-list-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently -n library,playground \"pnpm --filter react-virtual-list dev\" \"pnpm --filter playground dev\"",
+    "build": "pnpm -r build",
+    "build:lib": "pnpm --filter react-virtual-list build",
+    "build:playground": "pnpm --filter playground build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.13.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "concurrently": "^10.0.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tsdown": "^0.22.14",
+    "typescript": "^7.0.2"
+  }
+}
