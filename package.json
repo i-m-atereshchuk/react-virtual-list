@@ -11,7 +11,10 @@
     "typecheck": "pnpm --filter react-virtual-list typecheck && pnpm --filter playground typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx}": [
@@ -23,6 +26,7 @@
     ]
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
