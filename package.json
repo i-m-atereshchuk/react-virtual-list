@@ -4,14 +4,13 @@
   "type": "module",
   "packageManager": "pnpm@11.20.0",
   "scripts": {
-    "dev": "concurrently -n library,playground \"pnpm --filter react-virtual-list dev\" \"pnpm --filter playground dev\"",
-    "build": "pnpm -r build",
+    "dev": "pnpm --filter playground dev",
+    "build": "pnpm --filter react-virtual-list build && pnpm --filter playground build",
     "build:lib": "pnpm --filter react-virtual-list build",
     "build:playground": "pnpm --filter playground build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm --filter react-virtual-list typecheck && pnpm --filter playground typecheck"
   },
   "devDependencies": {
-    "concurrently": "10.0.4",
     "typescript": "5.9.3"
   }
 }
