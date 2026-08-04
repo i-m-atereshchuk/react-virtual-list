@@ -8,9 +8,18 @@
     "build": "pnpm --filter react-virtual-list build && pnpm --filter playground build",
     "build:lib": "pnpm --filter react-virtual-list build",
     "build:playground": "pnpm --filter playground build",
-    "typecheck": "pnpm --filter react-virtual-list typecheck && pnpm --filter playground typecheck"
+    "typecheck": "pnpm --filter react-virtual-list typecheck && pnpm --filter playground typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.9.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.66.0"
   }
 }
