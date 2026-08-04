@@ -1,5 +1,5 @@
 {
-  "name": "react-virtual-list",
+  "name": "react-virtual-lite",
   "version": "1.0.0",
   "description": "A lightweight virtual list library for React",
   "type": "module",
