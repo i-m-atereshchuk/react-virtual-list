@@ -2,38 +2,16 @@
   "name": "react-virtual-list-workspace",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@11.20.0",
   "scripts": {
     "dev": "concurrently -n library,playground \"pnpm --filter react-virtual-list dev\" \"pnpm --filter playground dev\"",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier . --write",
-    "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs,cjs}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yaml,yml}": [
-      "prettier --write"
-    ]
+    "build:lib": "pnpm --filter react-virtual-list build",
+    "build:playground": "pnpm --filter playground build",
+    "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "@eslint/js": "9.35.0",
-    "@typescript-eslint/eslint-plugin": "8.44.0",
-    "@typescript-eslint/parser": "8.44.0",
     "concurrently": "10.0.4",
-    "eslint": "9.35.0",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-react": "7.37.5",
-    "eslint-plugin-react-hooks": "5.2.0",
-    "globals": "16.4.0",
-    "husky": "9.1.7",
-    "lint-staged": "16.1.5",
-    "prettier": "3.6.2",
     "typescript": "5.9.3"
   }
 }
