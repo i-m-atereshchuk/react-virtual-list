@@ -1,5 +1,10 @@
 import { VirtualList } from "react-virtual-lite";
 
+const data = Array.from({ length: 1000000 }, (_, index) => ({
+  title: `Item ${index + 1}`,
+  height: Math.floor(Math.random() * 21) + 40, // від 40 до 60 включно
+}));
+
 function App() {
   return (
     <main
@@ -10,24 +15,26 @@ function App() {
       }}
     >
       <h1>React Virtual List Playground</h1>
-
-      <VirtualList height={400}>
-        {Array.from({ length: 100 }, (_, index) => (
-          <div
-            key={index}
-            style={{
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              paddingInline: 12,
-              borderBottom: "1px solid #eee",
-              boxSizing: "border-box",
-            }}
-          >
-            Item {index + 1}
-          </div>
-        ))}
-      </VirtualList>
+      <VirtualList
+        initRowHeight={40}
+        list={data}
+        renderItem={(item) => {
+          return (
+            <div
+              style={{
+                height: item.height,
+                display: "flex",
+                alignItems: "center",
+                paddingInline: 12,
+                borderBottom: "1px solid #eee",
+                boxSizing: "border-box",
+              }}
+            >
+              {item.title}
+            </div>
+          );
+        }}
+      />
     </main>
   );
 }

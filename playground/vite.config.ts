@@ -7,8 +7,8 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "react-virtual-list": fileURLToPath(
-        new URL("../packages/react-virtual-list/src/index.ts", import.meta.url),
+      "react-virtual-lite": fileURLToPath(
+        new URL("../packages/react-virtual-lite/src/index.ts", import.meta.url),
       ),
     },
   },
