@@ -6,22 +6,31 @@ import { useMeasurment } from "../hooks/use-measurment";
 
 export interface VirtualListProps<T> {
   list: T[];
-  height?: number;
-  children?: ReactNode;
-  renderItem: (item: T, index: number) => ReactNode;
-  initRowHeight: number;
+
+  viewPortHeight?: number;
+
+  estimatedRowHeight?: number | undefined;
+
+  rowHeight?: number | undefined;
+
   overcast?: number;
+
+  renderItem: (item: T, index: number) => ReactNode;
+  keyExtractor: (item: T, index: number) => string;
 }
 
 export function VirtualList<T>({
-  height = 400,
+  viewPortHeight = 400,
   overcast = 3,
   list,
+  rowHeight,
+  estimatedRowHeight = 40,
+
+  keyExtractor,
   renderItem,
-  initRowHeight,
 }: VirtualListProps<T>) {
   const style: CSSProperties = {
-    height,
+    height: viewPortHeight,
     overflow: "auto",
     border: "1px solid #ccc",
     boxSizing: "border-box",
@@ -30,16 +39,18 @@ export function VirtualList<T>({
 
   const {
     getOffset,
-    totalHeights,
+    totalHeight,
     handleHeightChange,
     handleScroll,
     startIndex,
     endIndex,
+    containerRef,
   } = useMeasurment({
     listSize: list.length,
-    initRowHeight: initRowHeight,
+    rowHeight,
+    estimatedRowHeight,
     overcast,
-    viewPortHeight: height,
+    viewPortHeight,
   });
 
   const children: ReactNode[] = [];
@@ -49,7 +60,7 @@ export function VirtualList<T>({
 
     children.push(
       <MeasureRow
-        key={i.toString()}
+        key={keyExtractor(listItem, i)}
         index={i}
         offsetTop={getOffset(i)}
         onHeightChange={handleHeightChange}
@@ -61,6 +72,7 @@ export function VirtualList<T>({
 
   return (
     <div
+      ref={containerRef}
       style={style}
       data-react-virtual-list=""
       onScroll={(event) => {
@@ -68,10 +80,7 @@ export function VirtualList<T>({
       }}
     >
       {children}
-      {totalHeights.map((height, index) => (
-        <div key={index} style={{ height: height }}></div>
-      ))}
-      use-measurment.ts
+      <div style={{ height: totalHeight }}></div>
     </div>
   );
 }

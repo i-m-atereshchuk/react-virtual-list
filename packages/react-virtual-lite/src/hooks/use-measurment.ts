@@ -1,95 +1,99 @@
-import { useRef, useState, useCallback, useReducer, useMemo } from "react";
+import { useRef, useState, useCallback, useReducer } from "react";
 
-import { Measurement } from "../utils/Measurement";
+import { MeasurementDynamic } from "../utils/MeasurementDynamic";
+import { MeasurementStatic } from "../utils/MeasurementStatic";
+
+import { nativeScrollToVirtual } from "../utils/native-scroll-to-virtual";
+import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 
 type UseMeasurmentOptions = {
-  initRowHeight: number;
+  estimatedRowHeight?: number | undefined;
+  rowHeight?: number | undefined;
   overcast: number;
   listSize: number;
   viewPortHeight: number;
 };
 
-const MAX_HEIGHT = 8_000_000;
-
 export const useMeasurment = ({
   listSize,
-  initRowHeight,
+  rowHeight,
   overcast,
   viewPortHeight,
+  estimatedRowHeight,
 }: UseMeasurmentOptions) => {
-  const [measurement] = useState(
-    () => new Measurement(listSize, initRowHeight),
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measurement] = useState(() => {
+    if (typeof rowHeight === "number") {
+      return new MeasurementStatic(listSize, rowHeight);
+    }
+
+    return new MeasurementDynamic(listSize, estimatedRowHeight);
+  });
 
   const [, forceLayout] = useReducer((value) => value + 1, 0);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [nativeScrollTop, setNativeScrollTop] = useState(0);
   const frameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(
     null,
   );
 
   function scheduleLayout() {
-    if (frameRef.current) {
-      return;
-    }
-
+    if (frameRef.current) return;
     frameRef.current = requestAnimationFrame(() => {
       frameRef.current = null;
-
       forceLayout();
     });
   }
 
   const handleHeightChange = useCallback((height: number, index: number) => {
     const hasChanged = measurement.setRowHeight(index, height);
-
-    if (!hasChanged) {
-      return;
-    }
-
+    if (!hasChanged) return;
     scheduleLayout();
   }, []);
 
   const handleScroll = (container: HTMLDivElement) => {
-    const top = container.scrollTop;
-
-    setScrollTop(top);
+    setNativeScrollTop(container.scrollTop);
   };
 
+  const realTotal = measurement.getTotal();
+  const isCompressed = realTotal > MAX_SAFE_SCROLL_RANGE;
+  const safeRange = isCompressed ? MAX_SAFE_SCROLL_RANGE : realTotal;
+
+  const maxRealScrollTop = Math.max(realTotal - viewPortHeight, 0);
+  const maxNativeScrollTop = Math.max(safeRange - viewPortHeight, 0);
+
+  const realScrollTop = isCompressed
+    ? nativeScrollToVirtual(
+        nativeScrollTop,
+        maxNativeScrollTop,
+        maxRealScrollTop,
+      )
+    : nativeScrollTop;
+
   const startIndex = Math.max(
-    measurement.findNearestIndex(scrollTop) - overcast,
+    measurement.findNearestIndex(realScrollTop) - overcast,
     0,
   );
 
   const endIndex = Math.min(
-    measurement.findNearestIndex(scrollTop + viewPortHeight) + overcast,
+    measurement.findNearestIndex(realScrollTop + viewPortHeight) + overcast,
     listSize,
   );
 
-  const scrollHeight = measurement.getTotal();
-
-  const totalHeights = useMemo(() => {
-    const heights: number[] = [];
-
-    let remaining = scrollHeight;
-
-    while (remaining > 0) {
-      const nextHeight = Math.min(MAX_HEIGHT, remaining);
-
-      heights.push(nextHeight);
-
-      remaining -= nextHeight;
-    }
-
-    return heights;
-  }, [scrollHeight]);
+  const getOffset = useCallback(
+    (i: number) => {
+      const relativeOffset = measurement.getOffset(i) - realScrollTop;
+      return nativeScrollTop + relativeOffset;
+    },
+    [nativeScrollTop, realScrollTop],
+  );
 
   return {
-    totalHeights,
-    getOffset: (i: number) => measurement.getOffset(i),
+    totalHeight: safeRange,
+    getOffset,
     handleHeightChange,
     handleScroll,
-    scrollTop,
     startIndex,
     endIndex,
+    containerRef,
   };
 };
