@@ -17,7 +17,7 @@ export class MeasurementDynamic implements Measurement {
   setRowHeight(index: number, nextHeight: number) {
     const nextIndex = index + 1;
 
-    while (this.sizes.length < nextIndex) {
+    while (this.sizes.length <= nextIndex) {
       this.pushBack();
     }
 
@@ -58,7 +58,7 @@ export class MeasurementDynamic implements Measurement {
     const lowbit = index & -index;
     const left = index - lowbit + 1;
 
-    this.offsets[index] = this.sum(index - 1) + this.sum(left - 1);
+    this.offsets[index] = this.sum(index - 1) - this.sum(left - 1);
   }
 
   findNearestIndexV1(offset: number) {

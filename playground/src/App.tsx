@@ -24,6 +24,7 @@ const RowItem = ({ title, height }: { title: string; height: number }) => {
         paddingInline: 12,
         borderBottom: "1px solid #eee",
         boxSizing: "border-box",
+        // backgroundColor: 'red'
       }}
     >
       {title}
@@ -43,6 +44,7 @@ function App() {
       <h1>React Virtual List Playground</h1>
       <VirtualList
         viewPortHeight={400}
+        overcast={30}
         keyExtractor={(item, index) => `${item.title}_${index}`}
         list={data}
         renderItem={(item) => {
