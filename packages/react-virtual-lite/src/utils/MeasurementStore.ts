@@ -1,16 +1,19 @@
+import { type Orientation } from "../types";
 import { type Measurement } from "./Measurement";
 
 export class MeasurementStore {
   private measurement: Measurement;
   private observer: ResizeObserver;
+  private orientation: Orientation;
 
   private nodeIndexMap = new Map<Element, number>();
   private listeners = new Set<() => void>();
   private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
   private version = 0;
 
-  constructor(measurement: Measurement) {
+  constructor(measurement: Measurement, orientation: Orientation) {
     this.measurement = measurement;
+    this.orientation = orientation;
 
     this.observer = new ResizeObserver((entries) => {
       let changed = false;
@@ -22,9 +25,11 @@ export class MeasurementStore {
           continue;
         }
 
-        const rowChanged = this.measurement.setRowHeight(
+        const rowChanged = this.measurement.setRowSize(
           rowIndex,
-          row.contentRect.height,
+          this.orientation === "vertical"
+            ? row.contentRect.height
+            : row.contentRect.width,
         );
 
         changed = changed || rowChanged;

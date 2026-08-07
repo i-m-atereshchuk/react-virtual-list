@@ -2,42 +2,42 @@ import { type Measurement } from "./Measurement";
 
 export class MeasurementStatic implements Measurement {
   private initListSize: number;
-  private initRowHeight: number;
+  private initRowSize: number;
 
-  constructor(initListSize: number, initRowHeight: number) {
+  constructor(initListSize: number, initRowSize: number) {
     this.initListSize = initListSize;
-    this.initRowHeight = initRowHeight;
+    this.initRowSize = initRowSize;
   }
 
-  setRowHeight(index: number, nextHeight: number): boolean {
+  setRowSize(index: number, nextSize: number): boolean {
     if (index > this.initListSize) {
       this.initListSize = index + 1;
-      this.initRowHeight = nextHeight;
+      this.initRowSize = nextSize;
       return true;
     }
 
-    if (nextHeight === this.initRowHeight) {
+    if (nextSize === this.initRowSize) {
       return false;
     }
 
-    this.initRowHeight = nextHeight;
+    this.initRowSize = nextSize;
 
     return true;
   }
 
   getSize(): number {
-    return this.initRowHeight;
+    return this.initRowSize;
   }
 
   getOffset(index: number): number {
-    return this.initRowHeight * index;
+    return this.initRowSize * index;
   }
 
   getTotal(): number {
-    return this.initListSize * this.initRowHeight;
+    return this.initListSize * this.initRowSize;
   }
 
   findNearestIndex(offset: number): number {
-    return Math.floor(offset / this.initRowHeight);
+    return Math.floor(offset / this.initRowSize);
   }
 }

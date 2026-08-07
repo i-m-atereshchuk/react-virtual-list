@@ -1,5 +1,5 @@
 export interface Measurement {
-  setRowHeight(index: number, nextHeight: number): boolean;
+  setRowSize(index: number, nextSize: number): boolean;
   getSize(index: number): number;
   getOffset(index: number): number;
   getTotal(): number;

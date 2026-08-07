@@ -11,27 +11,29 @@ import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 
 import { useMeasurmemtStore } from "./use-measurment-store";
 
+import { type SharedProps, type Required } from "../types";
+
 type UseMeasurmentOptions = {
-  estimatedRowHeight?: number | undefined;
-  rowHeight?: number | undefined;
-  overcast: number;
   listSize: number;
   viewPortHeight: number;
-};
+} & Required<SharedProps, "overcast" | "estimatedRowSize" | "orientation"> &
+  Pick<SharedProps, "rowSize">;
 
 export const useMeasurment = ({
   listSize,
-  rowHeight,
   overcast,
   viewPortHeight,
-  estimatedRowHeight,
+  rowSize,
+  estimatedRowSize,
+  orientation,
 }: UseMeasurmentOptions) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const measurementStore = useMeasurmemtStore({
     listSize,
-    estimatedRowHeight,
-    rowHeight,
+    rowSize,
+    estimatedRowSize,
+    orientation,
   });
 
   const [nativeScrollTop, setNativeScrollTop] = useState(0);
@@ -83,7 +85,7 @@ export const useMeasurment = ({
   );
 
   return {
-    totalHeight: safeRange,
+    totalSize: safeRange,
     getOffset,
     handleScroll,
     startIndex,

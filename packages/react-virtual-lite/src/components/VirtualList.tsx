@@ -4,28 +4,22 @@ import { MeasureRow } from "./MeasureRow";
 
 import { useMeasurment } from "../hooks/use-measurment";
 
-export interface VirtualListProps<T> {
+import { type SharedProps } from "../types";
+
+export interface VirtualListProps<T> extends SharedProps {
   list: T[];
-
   viewPortHeight?: number;
-
-  estimatedRowHeight?: number | undefined;
-
-  rowHeight?: number | undefined;
-
-  overcast?: number;
-
   renderItem: (item: T, index: number) => ReactNode;
   keyExtractor: (item: T, index: number) => string;
 }
 
 export function VirtualList<T>({
   viewPortHeight = 400,
-  overcast = 3,
+  overcast = 10,
   list,
-  rowHeight,
-  estimatedRowHeight = 40,
-
+  rowSize,
+  estimatedRowSize = 40,
+  orientation = "vertical",
   keyExtractor,
   renderItem,
 }: VirtualListProps<T>) {
@@ -39,7 +33,7 @@ export function VirtualList<T>({
 
   const {
     getOffset,
-    totalHeight,
+    totalSize,
     handleScroll,
     startIndex,
     endIndex,
@@ -47,10 +41,11 @@ export function VirtualList<T>({
     observeRow,
   } = useMeasurment({
     listSize: list.length,
-    rowHeight,
-    estimatedRowHeight,
+    rowSize,
+    estimatedRowSize,
     overcast,
     viewPortHeight,
+    orientation,
   });
 
   const children: ReactNode[] = [];
@@ -80,7 +75,7 @@ export function VirtualList<T>({
       }}
     >
       {children}
-      <div style={{ height: totalHeight }}></div>
+      <div style={{ height: totalSize }}></div>
     </div>
   );
 }

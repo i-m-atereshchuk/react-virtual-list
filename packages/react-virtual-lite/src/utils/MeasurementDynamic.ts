@@ -14,22 +14,22 @@ export class MeasurementDynamic implements Measurement {
     this.initOffsets();
   }
 
-  setRowHeight(index: number, nextHeight: number) {
+  setRowSize(index: number, nextSize: number) {
     const nextIndex = index + 1;
 
     while (this.sizes.length <= nextIndex) {
       this.pushBack();
     }
 
-    const prevHeight = this.sizes[nextIndex];
+    const prevSize = this.sizes[nextIndex];
 
-    if (prevHeight === nextHeight) {
+    if (prevSize === nextSize) {
       return false;
     }
 
-    this.sizes[nextIndex] = nextHeight;
+    this.sizes[nextIndex] = nextSize;
 
-    const difference = nextHeight - prevHeight;
+    const difference = nextSize - prevSize;
 
     this.add(nextIndex, difference);
     this.total += difference;
