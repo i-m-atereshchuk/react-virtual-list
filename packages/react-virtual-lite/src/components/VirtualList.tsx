@@ -40,11 +40,11 @@ export function VirtualList<T>({
   const {
     getOffset,
     totalHeight,
-    handleHeightChange,
     handleScroll,
     startIndex,
     endIndex,
     containerRef,
+    observeRow,
   } = useMeasurment({
     listSize: list.length,
     rowHeight,
@@ -63,7 +63,7 @@ export function VirtualList<T>({
         key={keyExtractor(listItem, i)}
         index={i}
         offsetTop={getOffset(i)}
-        onHeightChange={handleHeightChange}
+        observeRow={observeRow}
       >
         {renderItem(listItem, i)}
       </MeasureRow>,

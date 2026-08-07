@@ -3,12 +3,14 @@ import { type Measurement } from "./Measurement";
 export class MeasurementDynamic implements Measurement {
   private offsets: number[];
   private sizes: number[];
+  private total = 0;
 
   constructor(initListSize: number, initRowHeight: number = 50) {
     this.sizes = new Array(initListSize + 1).fill(initRowHeight);
     this.sizes[0] = 0;
 
     this.offsets = new Array(initListSize + 1).fill(0);
+    this.total = initListSize * initRowHeight;
     this.initOffsets();
   }
 
@@ -27,9 +29,10 @@ export class MeasurementDynamic implements Measurement {
 
     this.sizes[nextIndex] = nextHeight;
 
-    const diff = nextHeight - prevHeight;
+    const difference = nextHeight - prevHeight;
 
-    this.add(nextIndex, diff);
+    this.add(nextIndex, difference);
+    this.total += difference;
 
     return true;
   }
@@ -43,7 +46,7 @@ export class MeasurementDynamic implements Measurement {
   }
 
   getTotal() {
-    return this.sum(this.offsets.length - 1);
+    return this.total;
   }
 
   private pushBack() {
@@ -58,7 +61,7 @@ export class MeasurementDynamic implements Measurement {
     this.offsets[index] = this.sum(index - 1) + this.sum(left - 1);
   }
 
-  findNearestIndex(offset: number) {
+  findNearestIndexV1(offset: number) {
     let good = -1;
     let bad = this.offsets.length;
 
@@ -75,6 +78,30 @@ export class MeasurementDynamic implements Measurement {
     return good;
   }
 
+  findNearestIndex(offset: number) {
+    let index = 0;
+    let sum = 0;
+
+    let bit = 1;
+
+    while (bit << 1 < this.offsets.length) {
+      bit <<= 1;
+    }
+
+    while (bit !== 0) {
+      const next = index + bit;
+
+      if (next < this.offsets.length && sum + this.offsets[next] <= offset) {
+        sum += this.offsets[next];
+        index = next;
+      }
+
+      bit >>= 1;
+    }
+
+    return index;
+  }
+
   private sum(index: number) {
     let sum = 0;
 
@@ -88,7 +115,13 @@ export class MeasurementDynamic implements Measurement {
 
   private initOffsets() {
     for (let i = 1; i < this.sizes.length; i++) {
-      this.add(i, this.sizes[i]);
+      this.offsets[i] += this.sizes[i];
+
+      const parent = i + (i & -i);
+
+      if (parent < this.offsets.length) {
+        this.offsets[parent] += this.offsets[i];
+      }
     }
   }
 

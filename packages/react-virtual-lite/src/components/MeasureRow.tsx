@@ -9,14 +9,14 @@ import {
 type MeasureRowProps = {
   index: number;
   offsetTop: number;
-  onHeightChange: (height: number, index: number) => void;
+  observeRow: (element: Element, index: number) => void;
 };
 
 function MeasureRowComponent({
   index,
   offsetTop,
-  onHeightChange,
   children,
+  observeRow,
 }: PropsWithChildren<MeasureRowProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -34,17 +34,8 @@ function MeasureRowComponent({
       return;
     }
 
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      const rowHeight = entry.contentRect.height;
-
-      onHeightChange(rowHeight, index);
-    });
-
-    observer.observe(measureRow);
-
-    return () => observer.disconnect();
-  }, [index, onHeightChange]);
+    return observeRow(measureRow, index);
+  }, [index]);
 
   return (
     <div ref={containerRef} style={style}>

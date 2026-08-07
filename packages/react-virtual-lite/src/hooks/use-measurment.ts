@@ -1,10 +1,15 @@
-import { useRef, useState, useCallback, useReducer } from "react";
-
-import { MeasurementDynamic } from "../utils/MeasurementDynamic";
-import { MeasurementStatic } from "../utils/MeasurementStatic";
+import {
+  useRef,
+  useState,
+  useCallback,
+  useSyncExternalStore,
+  useEffect,
+} from "react";
 
 import { nativeScrollToVirtual } from "../utils/native-scroll-to-virtual";
 import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
+
+import { useMeasurmemtStore } from "./use-measurment-store";
 
 type UseMeasurmentOptions = {
   estimatedRowHeight?: number | undefined;
@@ -22,39 +27,28 @@ export const useMeasurment = ({
   estimatedRowHeight,
 }: UseMeasurmentOptions) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [measurement] = useState(() => {
-    if (typeof rowHeight === "number") {
-      return new MeasurementStatic(listSize, rowHeight);
-    }
 
-    return new MeasurementDynamic(listSize, estimatedRowHeight);
+  const measurementStore = useMeasurmemtStore({
+    listSize,
+    estimatedRowHeight,
+    rowHeight,
   });
 
-  const [, forceLayout] = useReducer((value) => value + 1, 0);
   const [nativeScrollTop, setNativeScrollTop] = useState(0);
-  const frameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(
-    null,
-  );
 
-  function scheduleLayout() {
-    if (frameRef.current) return;
-    frameRef.current = requestAnimationFrame(() => {
-      frameRef.current = null;
-      forceLayout();
-    });
-  }
-
-  const handleHeightChange = useCallback((height: number, index: number) => {
-    const hasChanged = measurement.setRowHeight(index, height);
-    if (!hasChanged) return;
-    scheduleLayout();
-  }, []);
+  useSyncExternalStore(measurementStore.subscribe, measurementStore.getVersion);
 
   const handleScroll = (container: HTMLDivElement) => {
     setNativeScrollTop(container.scrollTop);
   };
 
-  const realTotal = measurement.getTotal();
+  useEffect(() => {
+    return () => {
+      measurementStore.disconnect();
+    };
+  }, []);
+
+  const realTotal = measurementStore.getTotal();
   const isCompressed = realTotal > MAX_SAFE_SCROLL_RANGE;
   const safeRange = isCompressed ? MAX_SAFE_SCROLL_RANGE : realTotal;
 
@@ -70,18 +64,19 @@ export const useMeasurment = ({
     : nativeScrollTop;
 
   const startIndex = Math.max(
-    measurement.findNearestIndex(realScrollTop) - overcast,
+    measurementStore.findNearestIndex(realScrollTop) - overcast,
     0,
   );
 
   const endIndex = Math.min(
-    measurement.findNearestIndex(realScrollTop + viewPortHeight) + overcast,
+    measurementStore.findNearestIndex(realScrollTop + viewPortHeight) +
+      overcast,
     listSize,
   );
 
   const getOffset = useCallback(
     (i: number) => {
-      const relativeOffset = measurement.getOffset(i) - realScrollTop;
+      const relativeOffset = measurementStore.getOffset(i) - realScrollTop;
       return nativeScrollTop + relativeOffset;
     },
     [nativeScrollTop, realScrollTop],
@@ -90,10 +85,10 @@ export const useMeasurment = ({
   return {
     totalHeight: safeRange,
     getOffset,
-    handleHeightChange,
     handleScroll,
     startIndex,
     endIndex,
     containerRef,
+    observeRow: measurementStore.observeRow,
   };
 };
