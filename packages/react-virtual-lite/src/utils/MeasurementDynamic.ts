@@ -1,12 +1,22 @@
 import { type Measurement } from "./Measurement";
 
+import { SizeEstimator } from "../utils/SizeEstimator";
+
 export class MeasurementDynamic implements Measurement {
   private offsets: number[];
   private sizes: number[];
   private total = 0;
+  private sizeEstimator: SizeEstimator;
 
-  constructor(initListSize: number, initRowHeight: number = 50) {
-    this.sizes = new Array(initListSize + 1).fill(initRowHeight);
+  constructor(
+    initListSize: number,
+    initRowHeight: number = 50,
+    sizeEstimator: SizeEstimator,
+  ) {
+    this.sizeEstimator = sizeEstimator;
+    this.sizes = new Array(initListSize + 1).fill(
+      this.sizeEstimator.getEstimatedSize(),
+    );
     this.sizes[0] = 0;
 
     this.offsets = new Array(initListSize + 1).fill(0);
@@ -51,14 +61,15 @@ export class MeasurementDynamic implements Measurement {
 
   private pushBack() {
     const index = this.sizes.length;
+    const size = this.sizeEstimator.getEstimatedSize();
 
-    this.sizes.push(0);
+    this.sizes.push(size);
     this.offsets.push(0);
 
     const lowbit = index & -index;
     const left = index - lowbit + 1;
 
-    this.offsets[index] = this.sum(index - 1) - this.sum(left - 1);
+    this.offsets[index] = this.sum(index - 1) - this.sum(left - 1) + size;
   }
 
   findNearestIndexV1(offset: number) {

@@ -6,26 +6,39 @@ import {
   type CSSProperties,
 } from "react";
 
+import { type Orientation } from "../types";
+
 type MeasureRowProps = {
   index: number;
-  offsetTop: number;
+  offset: number;
   observeRow: (element: Element, index: number) => void;
+  orientation?: Orientation;
 };
 
 function MeasureRowComponent({
   index,
-  offsetTop,
+  offset,
   children,
   observeRow,
+  orientation = "vertical",
 }: PropsWithChildren<MeasureRowProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const style: CSSProperties = {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    transform: `translateY(${offsetTop}px)`,
-  };
+  const style: CSSProperties =
+    orientation === "vertical"
+      ? {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          transform: `translateY(${offset}px)`,
+        }
+      : {
+          position: "absolute",
+          width: "max-content",
+          top: 0,
+          bottom: 0,
+          transform: `translateX(${offset}px)`,
+        };
 
   useLayoutEffect(() => {
     const measureRow = containerRef.current;

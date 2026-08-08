@@ -1,17 +1,24 @@
 import { type Orientation } from "../types";
 import { type Measurement } from "./Measurement";
+import { SizeEstimator } from "../utils/SizeEstimator";
 
 export class MeasurementStore {
   private measurement: Measurement;
   private observer: ResizeObserver;
   private orientation: Orientation;
+  private sizeEstimator: SizeEstimator;
 
   private nodeIndexMap = new Map<Element, number>();
   private listeners = new Set<() => void>();
   private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
-  private version = 0;
+  private version = -1;
 
-  constructor(measurement: Measurement, orientation: Orientation) {
+  constructor(
+    measurement: Measurement,
+    orientation: Orientation,
+    sizeEstimator: SizeEstimator,
+  ) {
+    this.sizeEstimator = sizeEstimator;
     this.measurement = measurement;
     this.orientation = orientation;
 
@@ -25,12 +32,13 @@ export class MeasurementStore {
           continue;
         }
 
-        const rowChanged = this.measurement.setRowSize(
-          rowIndex,
+        const nextSize =
           this.orientation === "vertical"
             ? row.contentRect.height
-            : row.contentRect.width,
-        );
+            : row.contentRect.width;
+        const rowChanged = this.measurement.setRowSize(rowIndex, nextSize);
+
+        this.sizeEstimator.addSize(nextSize, rowIndex);
 
         changed = changed || rowChanged;
       }

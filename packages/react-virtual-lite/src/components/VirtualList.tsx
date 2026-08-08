@@ -1,81 +1,60 @@
-import type { CSSProperties, ReactNode } from "react";
-
-import { MeasureRow } from "./MeasureRow";
-
-import { useMeasurment } from "../hooks/use-measurment";
+import {
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  useRef,
+  useLayoutEffect,
+} from "react";
 
 import { type SharedProps } from "../types";
+
+import { VirtualListView } from "./VirtualListView";
 
 export interface VirtualListProps<T> extends SharedProps {
   list: T[];
   viewPortHeight?: number;
+  viewPortWidth?: number;
   renderItem: (item: T, index: number) => ReactNode;
   keyExtractor: (item: T, index: number) => string;
 }
 
-export function VirtualList<T>({
-  viewPortHeight = 400,
-  overcast = 10,
-  list,
-  rowSize,
-  estimatedRowSize = 40,
-  orientation = "vertical",
-  keyExtractor,
-  renderItem,
-}: VirtualListProps<T>) {
-  const style: CSSProperties = {
-    height: viewPortHeight,
-    overflow: "auto",
-    border: "1px solid #ccc",
-    boxSizing: "border-box",
-    position: "relative",
-  };
-
-  const {
-    getOffset,
-    totalSize,
-    handleScroll,
-    startIndex,
-    endIndex,
-    containerRef,
-    observeRow,
-  } = useMeasurment({
-    listSize: list.length,
-    rowSize,
-    estimatedRowSize,
-    overcast,
-    viewPortHeight,
-    orientation,
+export const VirtualList = <T,>(props: VirtualListProps<T>) => {
+  const divRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({
+    width: 0,
+    height: 0,
   });
 
-  const children: ReactNode[] = [];
+  const style: CSSProperties = {
+    width: "100%",
+    height: "100%",
+  };
 
-  for (let i = startIndex; i < endIndex; i++) {
-    const listItem = list[i];
+  useLayoutEffect(() => {
+    if (!divRef.current) {
+      return;
+    }
 
-    children.push(
-      <MeasureRow
-        key={keyExtractor(listItem, i)}
-        index={i}
-        offsetTop={getOffset(i)}
-        observeRow={observeRow}
-      >
-        {renderItem(listItem, i)}
-      </MeasureRow>,
-    );
-  }
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+
+      setSize({ width, height });
+    });
+
+    observer.observe(divRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={style}
-      data-react-virtual-list=""
-      onScroll={(event) => {
-        handleScroll(event.currentTarget);
-      }}
-    >
-      {children}
-      <div style={{ height: totalSize }}></div>
+    <div ref={divRef} style={style}>
+      {size.height > 0 && size.width > 0 && (
+        <VirtualListView
+          {...props}
+          viewPortHeight={size.height}
+          viewPortWidth={size.width}
+        />
+      )}
     </div>
   );
-}
+};

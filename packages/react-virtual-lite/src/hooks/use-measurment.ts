@@ -15,17 +15,19 @@ import { type SharedProps, type Required } from "../types";
 
 type UseMeasurmentOptions = {
   listSize: number;
-  viewPortHeight: number;
+  viewPortSize: number;
+  estimatedRowSize: number;
 } & Required<SharedProps, "overcast" | "estimatedRowSize" | "orientation"> &
-  Pick<SharedProps, "rowSize">;
+  Pick<SharedProps, "rowSize" | "onVisibleRangeChange">;
 
 export const useMeasurment = ({
   listSize,
   overcast,
-  viewPortHeight,
+  viewPortSize,
   rowSize,
   estimatedRowSize,
   orientation,
+  onVisibleRangeChange,
 }: UseMeasurmentOptions) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -40,8 +42,8 @@ export const useMeasurment = ({
 
   useSyncExternalStore(measurementStore.subscribe, measurementStore.getVersion);
 
-  const handleScroll = (container: HTMLDivElement) => {
-    setNativeScrollTop(container.scrollTop);
+  const handleScroll = (scroll: number) => {
+    setNativeScrollTop(scroll);
   };
 
   useEffect(() => {
@@ -54,8 +56,8 @@ export const useMeasurment = ({
   const isCompressed = realTotal > MAX_SAFE_SCROLL_RANGE;
   const safeRange = isCompressed ? MAX_SAFE_SCROLL_RANGE : realTotal;
 
-  const maxRealScrollTop = Math.max(realTotal - viewPortHeight, 0);
-  const maxNativeScrollTop = Math.max(safeRange - viewPortHeight, 0);
+  const maxRealScrollTop = Math.max(realTotal - viewPortSize, 0);
+  const maxNativeScrollTop = Math.max(safeRange - viewPortSize, 0);
 
   const realScrollTop = isCompressed
     ? nativeScrollToVirtual(
@@ -65,16 +67,13 @@ export const useMeasurment = ({
       )
     : nativeScrollTop;
 
-  const startIndex = Math.max(
-    measurementStore.findNearestIndex(realScrollTop) - overcast,
-    0,
+  const visibleStartIndex = measurementStore.findNearestIndex(realScrollTop);
+  const visibleEndIndex = measurementStore.findNearestIndex(
+    realScrollTop + viewPortSize,
   );
 
-  const endIndex = Math.min(
-    measurementStore.findNearestIndex(realScrollTop + viewPortHeight) +
-      overcast,
-    listSize,
-  );
+  const startIndex = Math.max(visibleStartIndex - overcast, 0);
+  const endIndex = Math.min(visibleEndIndex + overcast, listSize);
 
   const getOffset = useCallback(
     (i: number) => {
@@ -83,6 +82,12 @@ export const useMeasurment = ({
     },
     [nativeScrollTop, realScrollTop],
   );
+
+  useEffect(() => {
+    if (measurementStore.getVersion() > -1) {
+      onVisibleRangeChange?.(visibleStartIndex, visibleEndIndex);
+    }
+  }, [visibleStartIndex, visibleEndIndex]);
 
   return {
     totalSize: safeRange,
