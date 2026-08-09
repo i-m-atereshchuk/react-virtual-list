@@ -1,12 +1,14 @@
 import {
   useState,
-  type CSSProperties,
-  type ReactNode,
   useRef,
   useLayoutEffect,
+  forwardRef,
+  type Ref,
+  type CSSProperties,
+  type ReactNode,
 } from "react";
 
-import { type SharedProps } from "../types";
+import { type SharedProps, type VirtualListRef } from "../types";
 
 import { VirtualListView } from "./VirtualListView";
 
@@ -18,7 +20,10 @@ export interface VirtualListProps<T> extends SharedProps {
   keyExtractor: (item: T, index: number) => string;
 }
 
-export const VirtualList = <T,>(props: VirtualListProps<T>) => {
+const VirtualListInner = <T,>(
+  props: VirtualListProps<T>,
+  ref: Ref<VirtualListRef>,
+) => {
   const divRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({
     width: 0,
@@ -46,11 +51,14 @@ export const VirtualList = <T,>(props: VirtualListProps<T>) => {
     return () => observer.disconnect();
   }, []);
 
+  const isReady = size.height > 0 && size.width > 0 && props.list.length > 0;
+
   return (
     <div ref={divRef} style={style}>
-      {size.height > 0 && size.width > 0 && (
+      {isReady && (
         <VirtualListView
           {...props}
+          ref={ref}
           viewPortHeight={size.height}
           viewPortWidth={size.width}
         />
@@ -58,3 +66,7 @@ export const VirtualList = <T,>(props: VirtualListProps<T>) => {
     </div>
   );
 };
+
+export const VirtualList = forwardRef(VirtualListInner) as <T>(
+  props: VirtualListProps<T> & { ref?: Ref<VirtualListRef> },
+) => ReactNode;
