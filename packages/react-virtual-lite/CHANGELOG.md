@@ -1,4 +1,4 @@
-# react-virtual-list
+# react-virtual-lite
 
 ## 1.0.0
 

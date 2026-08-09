@@ -3,6 +3,30 @@
   "version": "1.0.0",
   "description": "A lightweight virtual list library for React",
   "license": "MIT",
+  "author": "Andrii Tereshchuk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/i-m-atereshchuk/react-virtual-list.git",
+    "directory": "packages/react-virtual-lite"
+  },
+  "bugs": {
+    "url": "https://github.com/i-m-atereshchuk/react-virtual-list/issues"
+  },
+  "homepage": "https://github.com/i-m-atereshchuk/react-virtual-list/tree/main/packages/react-virtual-lite#readme",
+  "keywords": [
+    "react",
+    "react-list",
+    "virtual-list",
+    "virtual-scroll",
+    "virtual-scroller",
+    "virtualization",
+    "windowing",
+    "infinite-scroll",
+    "large-list",
+    "dynamic-height",
+    "fixed-size",
+    "horizontal-scroll"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -19,6 +43,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",
