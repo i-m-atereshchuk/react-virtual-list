@@ -20,8 +20,8 @@ export const useMeasurementStore = ({
   estimatedRowSize,
   orientation,
 }: UseMeasurememtStoreOptions) => {
-  const [sizeEstimator] = useState(new SizeEstimator(estimatedRowSize));
   const [measurementStore] = useState(() => {
+    const sizeEstimator = new SizeEstimator(rowSize ?? estimatedRowSize);
     const measurement =
       typeof rowSize === "number"
         ? new MeasurementStatic(listSize, rowSize)

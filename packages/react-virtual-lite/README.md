@@ -5,7 +5,7 @@ Fast virtual scrolling for React.
 ## Install
 
 ```bash
-pnpm add react-virtual-list
+pnpm add react-virtual-lite
 ```
 
 ## Usage
