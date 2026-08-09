@@ -42,5 +42,5 @@ jobs:
 
       - name: Pack library
         run: |
-          cd packages/react-virtual-list
+          cd packages/react-virtual-lite
           pnpm pack
