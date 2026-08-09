@@ -25,7 +25,7 @@ export const useMeasurmemtStore = ({
     const measurement =
       typeof rowSize === "number"
         ? new MeasurementStatic(listSize, rowSize)
-        : new MeasurementDynamic(listSize, estimatedRowSize, sizeEstimator);
+        : new MeasurementDynamic(listSize, sizeEstimator);
 
     return new MeasurementStore(measurement, orientation, sizeEstimator);
   });

@@ -9,10 +9,10 @@ export type SharedProps = {
 
   orientation?: Orientation;
 
-  reachThreshold?: number | undefined;
+  remainingItemsThreshold?: number;
 
-  onReachEnd?: () => void;
-  onReachStart?: () => void;
+  onReachEnd?: (() => void) | undefined;
+  onReachStart?: (() => void) | undefined;
   onVisibleRangeChange?:
     ((startIndex: number, endIndex: number) => void) | undefined;
 };
