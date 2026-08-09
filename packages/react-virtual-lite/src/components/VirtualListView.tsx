@@ -1,6 +1,4 @@
 import {
-  useImperativeHandle,
-  useCallback,
   forwardRef,
   type CSSProperties,
   type ReactNode,
@@ -10,12 +8,9 @@ import {
 import { MeasureRow } from "./MeasureRow";
 
 import { useMeasurment } from "../hooks/use-measurment";
+import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
 
-import {
-  type SharedProps,
-  type VirtualListRef,
-  type ScrollBehavior,
-} from "../types";
+import { type SharedProps, type VirtualListRef } from "../types";
 
 export interface VirtualListViewProps<T> extends SharedProps {
   ref?: Ref<VirtualListRef> | undefined;
@@ -73,40 +68,14 @@ function VirtualListViewInnet<T>(
     onReachStart,
   });
 
-  const handleScrollTo = useCallback(
-    (itemOffset: number, scrollBehavior?: ScrollBehavior) => {
-      const scrollDirection = orientation === "horizontal" ? "left" : "top";
-
-      containerRef.current?.scrollTo({
-        [scrollDirection]: itemOffset,
-        behavior: scrollBehavior ?? "smooth",
-      });
-    },
-    [orientation, containerRef],
-  );
-
-  useImperativeHandle(
+  useVirtualListHandle({
     ref,
-    () => ({
-      scrollToIndex(index, scrollBehavior) {
-        if (!(index >= 0 && index < list.length)) {
-          throw new Error(`Index is out of range [0, ${list.length - 1}]`);
-        }
-
-        const itemOffset = getOffset(index);
-
-        handleScrollTo(itemOffset, scrollBehavior);
-      },
-      scrollToOffset(offset, scrollBehavior) {
-        if (!(offset >= 0 && offset <= totalSize)) {
-          throw new Error(`Offset is out of range [0, ${totalSize}]`);
-        }
-
-        handleScrollTo(offset, scrollBehavior);
-      },
-    }),
-    [getOffset, handleScrollTo, list.length, totalSize],
-  );
+    containerRef,
+    orientation,
+    listSize: list.length,
+    totalSize,
+    getOffset,
+  });
 
   const children: ReactNode[] = [];
 

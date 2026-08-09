@@ -16,7 +16,11 @@ export const ArticleCard = memo(function ArticleCard({
   }).format(new Date(article.webPublicationDate));
 
   return (
-    <article className="article-card" onClick={() => onClick?.(article)}>
+    <article
+      className="article-card"
+      style={{ overflow: "hidden" }}
+      onClick={() => onClick?.(article)}
+    >
       {article.fields?.thumbnail && (
         <img
           className="article-card_img"

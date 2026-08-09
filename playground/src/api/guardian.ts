@@ -1,8 +1,7 @@
 import type { GuardianApiResponse } from "../types/article";
 
 const apiUrl = "https://content.guardianapis.com/search";
-const apiKey = "96cff469-c1e4-4234-8288-7171a134ee2f";
-// const apiKey = import.meta.env.VITE_GUARDIAN_API_KEY;
+const apiKey = import.meta.env.VITE_GUARDIAN_API_KEY;
 
 export async function getArticles(page: number) {
   if (!apiKey) {
