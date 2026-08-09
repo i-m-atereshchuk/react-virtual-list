@@ -17,15 +17,17 @@ export interface VirtualListViewProps<T> extends SharedProps {
 export function VirtualListView<T>({
   viewPortHeight = 400,
   viewPortWidth = 400,
-  overcast = 10,
+  overcast = 3,
   list,
   rowSize,
   estimatedRowSize = 40,
   orientation = "vertical",
   keyExtractor,
   renderItem,
-  // reachThreshold = 200,
+  remainingItemsThreshold = 3,
   onVisibleRangeChange,
+  onReachEnd,
+  onReachStart,
 }: VirtualListViewProps<T>) {
   const style: CSSProperties = {
     height: viewPortHeight,
@@ -51,6 +53,9 @@ export function VirtualListView<T>({
     viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
     orientation,
     onVisibleRangeChange,
+    remainingItemsThreshold,
+    onReachEnd,
+    onReachStart,
   });
 
   const children: ReactNode[] = [];

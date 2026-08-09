@@ -17,8 +17,14 @@ type UseMeasurmentOptions = {
   listSize: number;
   viewPortSize: number;
   estimatedRowSize: number;
-} & Required<SharedProps, "overcast" | "estimatedRowSize" | "orientation"> &
-  Pick<SharedProps, "rowSize" | "onVisibleRangeChange">;
+} & Required<
+  SharedProps,
+  "overcast" | "estimatedRowSize" | "orientation" | "remainingItemsThreshold"
+> &
+  Pick<
+    SharedProps,
+    "rowSize" | "onVisibleRangeChange" | "onReachEnd" | "onReachStart"
+  >;
 
 export const useMeasurment = ({
   listSize,
@@ -28,8 +34,13 @@ export const useMeasurment = ({
   estimatedRowSize,
   orientation,
   onVisibleRangeChange,
+  remainingItemsThreshold,
+  onReachEnd,
+  onReachStart,
 }: UseMeasurmentOptions) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const hasReachedThresholdEnd = useRef(false);
+  const hasReachedThresholdStart = useRef(false);
 
   const measurementStore = useMeasurmemtStore({
     listSize,
@@ -39,12 +50,7 @@ export const useMeasurment = ({
   });
 
   const [nativeScrollTop, setNativeScrollTop] = useState(0);
-
   useSyncExternalStore(measurementStore.subscribe, measurementStore.getVersion);
-
-  const handleScroll = (scroll: number) => {
-    setNativeScrollTop(scroll);
-  };
 
   useEffect(() => {
     return () => {
@@ -88,6 +94,46 @@ export const useMeasurment = ({
       onVisibleRangeChange?.(visibleStartIndex, visibleEndIndex);
     }
   }, [visibleStartIndex, visibleEndIndex]);
+
+  const handleScroll = (scroll: number) => {
+    setNativeScrollTop(scroll);
+
+    if (scroll > nativeScrollTop) {
+      if (
+        listSize - visibleEndIndex <= remainingItemsThreshold &&
+        !hasReachedThresholdEnd.current
+      ) {
+        onReachEnd?.();
+        hasReachedThresholdEnd.current = true;
+      }
+    } else if (scroll < nativeScrollTop) {
+      if (
+        visibleStartIndex <= remainingItemsThreshold &&
+        !hasReachedThresholdStart.current
+      ) {
+        onReachStart?.();
+        hasReachedThresholdStart.current = true;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (
+      visibleStartIndex > remainingItemsThreshold &&
+      hasReachedThresholdStart.current
+    ) {
+      hasReachedThresholdStart.current = false;
+    }
+  }, [visibleStartIndex, remainingItemsThreshold]);
+
+  useEffect(() => {
+    if (
+      listSize - visibleEndIndex > remainingItemsThreshold &&
+      hasReachedThresholdEnd.current
+    ) {
+      hasReachedThresholdEnd.current = false;
+    }
+  }, [visibleEndIndex, remainingItemsThreshold]);
 
   return {
     totalSize: safeRange,

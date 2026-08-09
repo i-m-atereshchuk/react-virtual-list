@@ -2,17 +2,30 @@ import { type Measurement } from "./Measurement";
 
 import { SizeEstimator } from "../utils/SizeEstimator";
 
+class TotalScrollSize {
+  private total: number;
+
+  constructor(total: number) {
+    this.total = total;
+  }
+
+  getTotal() {
+    return this.total;
+  }
+
+  updateTotal(prevRowSize: number, nexRowSize: number) {
+    this.total -= prevRowSize;
+    this.total += nexRowSize;
+  }
+}
+
 export class MeasurementDynamic implements Measurement {
   private offsets: number[];
   private sizes: number[];
-  private total = 0;
+  private total: TotalScrollSize;
   private sizeEstimator: SizeEstimator;
 
-  constructor(
-    initListSize: number,
-    initRowHeight: number = 50,
-    sizeEstimator: SizeEstimator,
-  ) {
+  constructor(initListSize: number, sizeEstimator: SizeEstimator) {
     this.sizeEstimator = sizeEstimator;
     this.sizes = new Array(initListSize + 1).fill(
       this.sizeEstimator.getEstimatedSize(),
@@ -20,7 +33,9 @@ export class MeasurementDynamic implements Measurement {
     this.sizes[0] = 0;
 
     this.offsets = new Array(initListSize + 1).fill(0);
-    this.total = initListSize * initRowHeight;
+    this.total = new TotalScrollSize(
+      initListSize * sizeEstimator.getEstimatedSize(),
+    );
     this.initOffsets();
   }
 
@@ -33,7 +48,7 @@ export class MeasurementDynamic implements Measurement {
 
     const prevSize = this.sizes[nextIndex];
 
-    if (prevSize === nextSize) {
+    if (Math.abs(prevSize - nextSize) > 1) {
       return false;
     }
 
@@ -42,7 +57,7 @@ export class MeasurementDynamic implements Measurement {
     const difference = nextSize - prevSize;
 
     this.add(nextIndex, difference);
-    this.total += difference;
+    this.total.updateTotal(prevSize, nextSize);
 
     return true;
   }
@@ -56,7 +71,7 @@ export class MeasurementDynamic implements Measurement {
   }
 
   getTotal() {
-    return this.total;
+    return this.total.getTotal();
   }
 
   private pushBack() {
@@ -68,6 +83,7 @@ export class MeasurementDynamic implements Measurement {
 
     const lowbit = index & -index;
     const left = index - lowbit + 1;
+    this.total.updateTotal(0, size);
 
     this.offsets[index] = this.sum(index - 1) - this.sum(left - 1) + size;
   }
