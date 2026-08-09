@@ -9,7 +9,7 @@ import {
 import { nativeScrollToVirtual } from "../utils/native-scroll-to-virtual";
 import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 
-import { useMeasurmemtStore } from "./use-measurment-store";
+import { useMeasurementStore } from "./use-measurement-store";
 
 import { type SharedProps, type Required } from "../types";
 
@@ -19,16 +19,16 @@ type UseMeasurmentOptions = {
   estimatedRowSize: number;
 } & Required<
   SharedProps,
-  "overcast" | "estimatedRowSize" | "orientation" | "remainingItemsThreshold"
+  "overscan" | "estimatedRowSize" | "orientation" | "remainingItemsThreshold"
 > &
   Pick<
     SharedProps,
     "rowSize" | "onVisibleRangeChange" | "onReachEnd" | "onReachStart"
   >;
 
-export const useMeasurment = ({
+export const useMeasurement = ({
   listSize,
-  overcast,
+  overscan,
   viewPortSize,
   rowSize,
   estimatedRowSize,
@@ -42,7 +42,7 @@ export const useMeasurment = ({
   const hasReachedThresholdEnd = useRef(false);
   const hasReachedThresholdStart = useRef(false);
 
-  const measurementStore = useMeasurmemtStore({
+  const measurementStore = useMeasurementStore({
     listSize,
     rowSize,
     estimatedRowSize,
@@ -78,8 +78,8 @@ export const useMeasurment = ({
     realScrollTop + viewPortSize,
   );
 
-  const startIndex = Math.max(visibleStartIndex - overcast, 0);
-  const endIndex = Math.min(visibleEndIndex + overcast, listSize);
+  const startIndex = Math.max(visibleStartIndex - overscan, 0);
+  const endIndex = Math.min(visibleEndIndex + overscan, listSize);
 
   const getOffset = useCallback(
     (i: number) => {

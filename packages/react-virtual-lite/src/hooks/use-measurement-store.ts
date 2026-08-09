@@ -8,18 +8,18 @@ import { SizeEstimator } from "../utils/SizeEstimator";
 
 import type { SharedProps, Required } from "../types";
 
-type UseMeasurmemtStoreOptions = {
+type UseMeasurememtStoreOptions = {
   listSize: number;
   rowSize?: number | undefined;
   estimatedRowSize: number;
 } & Required<SharedProps, "orientation" | "estimatedRowSize">;
 
-export const useMeasurmemtStore = ({
+export const useMeasurementStore = ({
   listSize,
   rowSize,
   estimatedRowSize,
   orientation,
-}: UseMeasurmemtStoreOptions) => {
+}: UseMeasurememtStoreOptions) => {
   const [sizeEstimator] = useState(new SizeEstimator(estimatedRowSize));
   const [measurementStore] = useState(() => {
     const measurement =

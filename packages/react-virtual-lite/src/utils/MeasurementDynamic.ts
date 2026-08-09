@@ -48,7 +48,7 @@ export class MeasurementDynamic implements Measurement {
 
     const prevSize = this.sizes[nextIndex];
 
-    if (Math.abs(prevSize - nextSize) > 1) {
+    if (Math.abs(prevSize - nextSize) < 1) {
       return false;
     }
 

@@ -6,7 +6,7 @@ export type SharedProps = {
 
   rowSize?: number | undefined;
 
-  overcast?: number;
+  overscan?: number;
 
   orientation?: Orientation;
 

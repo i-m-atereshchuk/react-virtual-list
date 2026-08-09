@@ -7,7 +7,7 @@ import {
 
 import { MeasureRow } from "./MeasureRow";
 
-import { useMeasurment } from "../hooks/use-measurment";
+import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
 
 import { type SharedProps, type VirtualListRef } from "../types";
@@ -25,7 +25,7 @@ function VirtualListViewInnet<T>(
   {
     viewPortHeight = 400,
     viewPortWidth = 400,
-    overcast = 3,
+    overscan = 3,
     list,
     rowSize,
     estimatedRowSize = 40,
@@ -55,11 +55,11 @@ function VirtualListViewInnet<T>(
     endIndex,
     containerRef,
     observeRow,
-  } = useMeasurment({
+  } = useMeasurement({
     listSize: list.length,
     rowSize,
     estimatedRowSize,
-    overcast,
+    overscan,
     viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
     orientation,
     onVisibleRangeChange,
