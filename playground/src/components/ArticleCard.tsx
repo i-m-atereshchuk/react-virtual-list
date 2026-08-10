@@ -1,14 +1,16 @@
-import { memo } from "react";
+import { memo, type CSSProperties } from "react";
 import type { GuardianArticle } from "../types/article";
 
 type ArticleCardProps = {
   article: GuardianArticle;
   onClick?: (article: GuardianArticle) => void;
+  style?: CSSProperties;
 };
 
 export const ArticleCard = memo(function ArticleCard({
   article,
   onClick,
+  style = {},
 }: ArticleCardProps) {
   const publicationDate = new Intl.DateTimeFormat("uk-UA", {
     dateStyle: "medium",
@@ -18,7 +20,7 @@ export const ArticleCard = memo(function ArticleCard({
   return (
     <article
       className="article-card"
-      style={{ overflow: "hidden" }}
+      style={{ overflow: "hidden", ...style }}
       onClick={() => onClick?.(article)}
     >
       {article.fields?.thumbnail && (

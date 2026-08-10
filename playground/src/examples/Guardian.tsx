@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 
 import { useLoadArticles } from "../hooks/use-load-articles";
@@ -7,6 +7,9 @@ import { ArticleCard } from "../components/ArticleCard";
 // import { type GuardianArticle } from "../types/article";
 
 export function Guardian() {
+  const [orientation, setOrientation] = useState<"vertical" | "horizontal">(
+    "vertical",
+  );
   const refVirtualList = useRef<VirtualListRef>(null);
   const { articles, onReachEnd } = useLoadArticles();
 
@@ -20,15 +23,35 @@ export function Guardian() {
   };
 
   const handleArticleClick = useCallback(() => {}, []);
+  const handleToggleOrientation = () => {
+    setOrientation((prev) => {
+      if (prev === "horizontal") {
+        return "vertical";
+      }
+
+      return "horizontal";
+    });
+  };
+
+  const articleCardStyles =
+    orientation === "horizontal"
+      ? {
+          width: "350px",
+          height: "100%",
+        }
+      : {};
   return (
     <main
       style={{
-        width: 700,
+        width: "100%",
         margin: "40px auto",
-        padding: 20,
+        padding: 0,
         height: 600,
       }}
     >
+      <div onClick={handleToggleOrientation}>
+        <button>Toggle orientation</button>
+      </div>
       <div onClick={handleButtonClick}>
         <button>Scroll to offset</button>
       </div>
@@ -40,6 +63,7 @@ export function Guardian() {
           height: 350,
           width: "100%",
           border: "1px white solid",
+          boxSizing: "border-box",
         }}
       >
         <VirtualList
@@ -47,9 +71,13 @@ export function Guardian() {
           list={articles}
           estimatedRowSize={300}
           keyExtractor={(item, index) => `${item.id}-${index}`}
-          orientation="vertical"
+          orientation={orientation}
           renderItem={(item) => (
-            <ArticleCard onClick={handleArticleClick} article={item} />
+            <ArticleCard
+              onClick={handleArticleClick}
+              article={item}
+              style={articleCardStyles}
+            />
           )}
           onReachEnd={onReachEnd}
         />

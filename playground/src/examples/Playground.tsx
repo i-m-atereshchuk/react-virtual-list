@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { VirtualList } from "react-virtual-lite";
+import { useState, useRef } from "react";
+import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 
 const data = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
@@ -48,21 +48,20 @@ const RowItem = ({
 const RowItemVertical = ({
   title,
   height,
+  width,
 }: {
   title: string;
   height: number;
+  width?: number | undefined;
 }) => {
-  const [containerHeight, setContainerHeight] = useState(height);
-
-  const handleClick = () => {
-    setContainerHeight((prev) => (height === prev ? prev + 30 : height));
-  };
+  const handleClick = () => {};
 
   return (
     <div
       onClick={handleClick}
       style={{
-        height: containerHeight,
+        height,
+        width,
         display: "flex",
         alignItems: "center",
         paddingInline: 12,
@@ -76,6 +75,20 @@ const RowItemVertical = ({
   );
 };
 function Playground() {
+  const [orientation, setOrientation] = useState<"vertical" | "horizontal">(
+    "vertical",
+  );
+  const refVirtualList = useRef<VirtualListRef>(null);
+  const handleToggleOrientation = () => {
+    setOrientation((prev) => {
+      if (prev === "horizontal") {
+        return "vertical";
+      }
+
+      return "horizontal";
+    });
+  };
+
   return (
     <main
       style={{
@@ -112,6 +125,9 @@ function Playground() {
       </div>
 
       <h1>Vertical</h1>
+      <div onClick={handleToggleOrientation}>
+        <button>Toggle orientation</button>
+      </div>
       <div
         style={{
           height: 650,
@@ -120,11 +136,18 @@ function Playground() {
         }}
       >
         <VirtualList
+          ref={refVirtualList}
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
-          orientation="vertical"
+          orientation={orientation}
           renderItem={(item) => {
-            return <RowItemVertical height={item.height} title={item.title} />;
+            return (
+              <RowItemVertical
+                width={orientation === "horizontal" ? 300 : undefined}
+                height={orientation === "horizontal" ? 650 : item.height}
+                title={item.title}
+              />
+            );
           }}
           // onVisibleRangeChange={(startIndex, endIndex) => {
           //   console.log("onVisibleRangeChange", startIndex, endIndex);

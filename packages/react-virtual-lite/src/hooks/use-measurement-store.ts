@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { MeasurementDynamic } from "../utils/MeasurementDynamic";
 import { MeasurementStatic } from "../utils/MeasurementStatic";
@@ -20,8 +20,11 @@ export const useMeasurementStore = ({
   estimatedRowSize,
   orientation,
 }: UseMeasurememtStoreOptions) => {
+  const prevOrientationRef = useRef(orientation);
+
   const [measurementStore] = useState(() => {
     const sizeEstimator = new SizeEstimator(rowSize ?? estimatedRowSize);
+
     const measurement =
       typeof rowSize === "number"
         ? new MeasurementStatic(listSize, rowSize)
@@ -29,6 +32,30 @@ export const useMeasurementStore = ({
 
     return new MeasurementStore(measurement, orientation, sizeEstimator);
   });
+
+  useEffect(() => {
+    if (prevOrientationRef.current === orientation) {
+      return;
+    }
+
+    prevOrientationRef.current = orientation;
+
+    const sizeEstimator = new SizeEstimator(rowSize ?? estimatedRowSize);
+
+    const measurement =
+      typeof rowSize === "number"
+        ? new MeasurementStatic(listSize, rowSize)
+        : new MeasurementDynamic(listSize, sizeEstimator);
+
+    measurementStore.setOrientation(measurement, orientation, sizeEstimator);
+  }, [orientation, listSize, rowSize, estimatedRowSize, measurementStore]);
+
+  useEffect(() => {
+    return () => {
+      measurementStore.disconnect();
+      measurementStore.clearAllListeners();
+    };
+  }, [measurementStore]);
 
   return measurementStore;
 };

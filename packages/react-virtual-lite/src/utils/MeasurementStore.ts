@@ -77,6 +77,30 @@ export class MeasurementStore {
     return () => this.listeners.delete(listener);
   };
 
+  clearAllListeners = () => {
+    this.listeners.clear();
+  };
+
+  setOrientation = (
+    measurement: Measurement,
+    nextOrientation: Orientation,
+    sizeEstimator: SizeEstimator,
+  ) => {
+    if (nextOrientation === this.orientation) {
+      return;
+    }
+    this.measurement = measurement;
+    this.sizeEstimator = sizeEstimator;
+    this.orientation = nextOrientation;
+
+    for (const node of this.nodeIndexMap.keys()) {
+      this.observer.unobserve(node);
+      this.observer.observe(node);
+    }
+
+    this.scheduleUpdate();
+  };
+
   getOffset = (i: number) => this.measurement.getOffset(i);
 
   getTotal = () => this.measurement.getTotal();

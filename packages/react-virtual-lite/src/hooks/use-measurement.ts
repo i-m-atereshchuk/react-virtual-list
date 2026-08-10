@@ -89,6 +89,10 @@ export const useMeasurement = ({
     [nativeScrollTop, realScrollTop],
   );
 
+  const getOffsetStart = useCallback(() => {
+    return getOffset(startIndex);
+  }, [getOffset, startIndex]);
+
   useEffect(() => {
     if (measurementStore.getVersion() > -1) {
       onVisibleRangeChange?.(visibleStartIndex, visibleEndIndex);
@@ -138,6 +142,7 @@ export const useMeasurement = ({
   return {
     totalSize: safeRange,
     getOffset,
+    getOffsetStart,
     handleScroll,
     startIndex,
     endIndex,
