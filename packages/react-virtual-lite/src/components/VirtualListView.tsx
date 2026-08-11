@@ -81,12 +81,13 @@ function VirtualListViewInnet<T>(
 
   for (let i = startIndex; i < endIndex; i++) {
     const listItem = list[i];
+    const offset = getOffset(i);
 
     children.push(
       <MeasureRow
         key={keyExtractor(listItem, i)}
         index={i}
-        offset={getOffset(i)}
+        offset={offset}
         observeRow={observeRow}
         orientation={orientation}
       >

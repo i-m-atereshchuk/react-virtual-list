@@ -149,9 +149,9 @@ function Playground() {
               />
             );
           }}
-          // onVisibleRangeChange={(startIndex, endIndex) => {
-          //   console.log("onVisibleRangeChange", startIndex, endIndex);
-          // }}
+          onVisibleRangeChange={(startIndex, endIndex) => {
+            console.log("onVisibleRangeChange", startIndex, endIndex);
+          }}
 
           onReachEnd={() => {
             console.log("onReachEnd");
