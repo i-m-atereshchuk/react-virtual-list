@@ -17,13 +17,13 @@ export class CalculateRenderRange {
 
   private hasReachedThresholdEnd = false;
   private hasReachedThresholdStart = false;
+  private penndingScroll = -1;
   private prevNativeScrollTop = -1;
   private safeRange = 0;
   private nativeScrollTop = 0;
   private realScrollTop = 0;
   private version = -1;
 
-  private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
   private frameCalcRef: ReturnType<typeof requestAnimationFrame> | null = null;
 
   private startIndex = -1;
@@ -56,6 +56,37 @@ export class CalculateRenderRange {
   }
 
   updateScroll = (scroll: number) => {
+    this.penndingScroll = scroll;
+
+    this.scheduleCalculation();
+  };
+
+  private scheduleCalculation() {
+    if (this.frameCalcRef !== null) {
+      return;
+    }
+
+    this.frameCalcRef = requestAnimationFrame(this.flush);
+  }
+
+  private flush = () => {
+    this.frameCalcRef = null;
+    const scroll = this.penndingScroll;
+
+    this.prevNativeScrollTop = this.nativeScrollTop;
+    this.nativeScrollTop = this.penndingScroll;
+    const hasChanged = this.calculateIndices();
+
+    if (hasChanged) {
+      this.nextRender();
+    }
+
+    if (scroll !== this.penndingScroll) {
+      this.frameCalcRef = requestAnimationFrame(this.flush);
+    }
+  };
+
+  updateScrollV2 = (scroll: number) => {
     this.prevNativeScrollTop = this.nativeScrollTop;
     this.nativeScrollTop = scroll;
 
@@ -194,6 +225,8 @@ export class CalculateRenderRange {
 
     if (visibleRangeChanged && this.measurementStore.getVersion() > -1) {
       this.onVisibleRangeChange?.(visibleStartIndex, visibleEndIndex);
+      this.visibleStartIndex = visibleStartIndex;
+      this.visibleEndIndex = visibleEndIndex;
     }
 
     this.handleScrollEvents(visibleStartIndex, visibleEndIndex);
@@ -209,23 +242,18 @@ export class CalculateRenderRange {
     const rangeChanged =
       startIndex !== this.startIndex || this.endIndex !== endIndex;
 
-    if (rangeChanged) {
+    if (rangeChanged || isCompressed) {
       this.startIndex = startIndex;
       this.endIndex = endIndex;
 
-      this.scheduleUpdate();
+      return true;
     }
+
+    return false;
   }
 
-  private scheduleUpdate() {
-    if (this.frameRef !== null) {
-      return;
-    }
-
-    this.frameRef = requestAnimationFrame(() => {
-      this.frameRef = null;
-      this.version = (this.version + 1) % 2;
-      this.listeners.forEach((listener) => listener());
-    });
+  private nextRender() {
+    this.version = this.version + 1;
+    this.listeners.forEach((listener) => listener());
   }
 }

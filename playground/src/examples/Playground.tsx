@@ -154,11 +154,11 @@ function Playground() {
           }}
 
           onReachEnd={() => {
-            console.log("onReachEnd");
+            // console.log("onReachEnd");
           }}
 
           onReachStart={() => {
-            console.log("onReachStart");
+            // console.log("onReachStart");
           }}
         />
       </div>
