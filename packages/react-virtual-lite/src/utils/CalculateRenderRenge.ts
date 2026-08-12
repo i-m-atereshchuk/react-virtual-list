@@ -142,7 +142,7 @@ export class CalculateRenderRange {
     this.listSize = listSize;
     this.remainingItemsThreshold = remainingItemsThreshold;
 
-    this.calculateIndices();
+    this.scheduleCalculation();
   }
 
   getScrollSafeRange() {
