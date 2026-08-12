@@ -139,6 +139,7 @@ function Playground() {
           ref={refVirtualList}
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
+          rowSize={40}
           orientation={orientation}
           renderItem={(item) => {
             return (

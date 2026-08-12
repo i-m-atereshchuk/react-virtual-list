@@ -100,6 +100,7 @@ function VirtualListViewInnet<T>(
     <div
       ref={containerRef}
       style={style}
+      data-testid="react-virtual-lite"
       data-react-virtual-list="list"
       onScroll={(event) => {
         handleScroll(

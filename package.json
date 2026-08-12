@@ -15,7 +15,9 @@
     "prepare": "husky",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "perf": "pnpm --filter playground perf",
+    "perf:headed": "pnpm --filter playground perf:headed"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,ts,tsx}": [
