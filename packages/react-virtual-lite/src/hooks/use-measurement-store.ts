@@ -6,7 +6,7 @@ import { MeasurementStatic } from "../utils/MeasurementStatic";
 import { MeasurementStore } from "../utils/MeasurementStore";
 import { SizeEstimator } from "../utils/SizeEstimator";
 
-import type { SharedProps, Required } from "../types";
+import type { SharedProps, Required } from "../types/List";
 
 type UseMeasurememtStoreOptions = {
   listSize: number;

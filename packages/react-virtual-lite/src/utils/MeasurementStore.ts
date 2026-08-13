@@ -1,5 +1,5 @@
-import { type Orientation } from "../types";
-import { type Measurement } from "./Measurement";
+import { type Orientation } from "../types/List";
+import { type Measurement } from "../types/Measurement";
 import { SizeEstimator } from "../utils/SizeEstimator";
 
 export class MeasurementStore {

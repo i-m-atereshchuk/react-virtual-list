@@ -1,4 +1,4 @@
-import { type Measurement } from "./Measurement";
+import { type Measurement } from "../types/Measurement";
 
 export class MeasurementStatic implements Measurement {
   private initListSize: number;

@@ -6,7 +6,7 @@ import {
   type CSSProperties,
 } from "react";
 
-import { type Orientation } from "../types";
+import { type Orientation } from "../types/List";
 
 type MeasureRowProps = {
   index: number;

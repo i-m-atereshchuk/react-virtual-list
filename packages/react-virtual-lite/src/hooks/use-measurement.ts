@@ -11,7 +11,7 @@ import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 
 import { useMeasurementStore } from "./use-measurement-store";
 
-import { type SharedProps, type Required } from "../types";
+import { type SharedProps, type Required } from "../types/List";
 
 type UseMeasurmentOptions = {
   listSize: number;

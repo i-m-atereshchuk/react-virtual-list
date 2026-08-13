@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { type SharedProps, type VirtualListRef } from "../types";
+import { type SharedProps, type VirtualListRef } from "../types/List";
 
 import { VirtualListView } from "./VirtualListView";
 

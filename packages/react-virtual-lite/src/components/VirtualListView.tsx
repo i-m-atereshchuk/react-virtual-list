@@ -10,7 +10,7 @@ import { MeasureRow } from "./MeasureRow";
 import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
 
-import { type SharedProps, type VirtualListRef } from "../types";
+import { type SharedProps, type VirtualListRef } from "../types/List";
 
 export interface VirtualListViewProps<T> extends SharedProps {
   ref?: Ref<VirtualListRef> | undefined;

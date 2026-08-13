@@ -1,4 +1,4 @@
-import { type Measurement } from "./Measurement";
+import { type Measurement } from "../types/Measurement";
 
 import { SizeEstimator } from "../utils/SizeEstimator";
 

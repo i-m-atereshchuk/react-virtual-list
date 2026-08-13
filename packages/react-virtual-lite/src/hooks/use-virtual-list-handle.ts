@@ -5,7 +5,7 @@ import {
   type RefObject,
 } from "react";
 
-import type { ScrollBehavior, VirtualListRef } from "../types";
+import type { ScrollBehavior, VirtualListRef } from "../types/List";
 
 interface UseVirtualListHandleProps {
   ref: Ref<VirtualListRef>;
