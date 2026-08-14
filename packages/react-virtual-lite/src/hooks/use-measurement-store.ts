@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { MeasurementDynamic } from "../utils/MeasurementDynamic";
 import { MeasurementStatic } from "../utils/MeasurementStatic";
@@ -29,6 +29,8 @@ export const useMeasurementStore = ({
 
     return new MeasurementStore(measurement, orientation, sizeEstimator);
   });
+
+  useSyncExternalStore(measurementStore.subscribe, measurementStore.getVersion);
 
   return measurementStore;
 };
