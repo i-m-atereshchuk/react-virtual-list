@@ -88,23 +88,6 @@ export class MeasurementDynamic implements Measurement {
     this.offsets[index] = this.sum(index - 1) - this.sum(left - 1) + size;
   }
 
-  findNearestIndexV1(offset: number) {
-    let good = -1;
-    let bad = this.offsets.length;
-
-    while (bad - good > 1) {
-      const m = (good + bad) >> 1;
-
-      if (this.sum(m) <= offset) {
-        good = m;
-      } else {
-        bad = m;
-      }
-    }
-
-    return good;
-  }
-
   findNearestIndex(offset: number) {
     let index = 0;
     let sum = 0;

@@ -67,11 +67,5 @@ export const useCalculateRenderRange = ({
     });
   }, [onReachEnd, onReachEnd, onVisibleRangeChange]);
 
-  return {
-    handleScroll: calculateRenderRange.handleScroll,
-    safeRange: calculateRenderRange.getSafeRange(),
-    startIndex: calculateRenderRange.getStartIndex(),
-    endIndex: calculateRenderRange.getEndIndex(),
-    getOffset: calculateRenderRange.getOffset,
-  };
+  return calculateRenderRange;
 };

@@ -40,13 +40,7 @@ export const useMeasurement = ({
     orientation,
   });
 
-  const {
-    handleScroll: handleRangeScroll,
-    startIndex,
-    endIndex,
-    getOffset,
-    safeRange,
-  } = useCalculateRenderRange({
+  const calculateRenderRange = useCalculateRenderRange({
     measurement: measurementStore,
     viewPortSize,
     overscan,
@@ -64,12 +58,13 @@ export const useMeasurement = ({
   }, []);
 
   return {
-    totalSize: safeRange,
-    getOffset,
-    handleScroll: handleRangeScroll,
-    startIndex,
-    endIndex,
+    totalSize: calculateRenderRange.getSafeRange(),
+    getOffset: calculateRenderRange.getOffset,
+    handleScroll: calculateRenderRange.handleScroll,
+    startIndex: calculateRenderRange.getStartIndex(),
+    endIndex: calculateRenderRange.getEndIndex(),
     containerRef,
     observeRow: measurementStore.observeRow,
+    calculateRenderRange,
   };
 };

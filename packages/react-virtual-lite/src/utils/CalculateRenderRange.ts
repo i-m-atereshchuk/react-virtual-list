@@ -3,6 +3,7 @@ import { MeasurementStore } from "./MeasurementStore";
 import { ExternalStore } from "./ExternalStore";
 import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 import { nativeScrollToVirtual } from "./native-scroll-to-virtual";
+import { virtualScrollToNative } from "./virtual-scroll-to-native";
 
 type UppdateProperties = {
   viewPortSize: number;
@@ -83,6 +84,7 @@ export class CalculateRenderRange extends ExternalStore {
     this.measurementStore = measurementStore;
     this.measurementStore.subscribe(this.handleMeasurementStoreChanged);
     this.getOffset = this.getOffset.bind(this);
+    this.getScrollOffsetByIndex = this.getScrollOffsetByIndex.bind(this);
 
     this.handleScroll(0);
   }
@@ -232,11 +234,42 @@ export class CalculateRenderRange extends ExternalStore {
     return this.startIndex;
   }
 
+  getEndIndex() {
+    return this.endIndex;
+  }
+
+  getVisibleStartIndex() {
+    return this.visibleStartIndex;
+  }
+
+  getVisibleEndIndex() {
+    return this.visibleEndIndex;
+  }
+
   getSafeRange() {
     return this.safeRange;
   }
 
-  getEndIndex() {
-    return this.endIndex;
+  getScrollOffsetByIndex(index: number) {
+    const realTotalSize = this.measurementStore.getTotal();
+    const itemOffset = this.measurementStore.getOffset(index);
+
+    const isCompressed = realTotalSize > MAX_SAFE_SCROLL_RANGE;
+
+    if (!isCompressed) {
+      return itemOffset;
+    }
+
+    const safeRange = MAX_SAFE_SCROLL_RANGE;
+
+    const maxVirtualScrollTop = Math.max(realTotalSize - this.viewPortSize, 0);
+
+    const maxNativeScrollTop = Math.max(safeRange - this.viewPortSize, 0);
+
+    return virtualScrollToNative(
+      itemOffset,
+      maxNativeScrollTop,
+      maxVirtualScrollTop,
+    );
   }
 }

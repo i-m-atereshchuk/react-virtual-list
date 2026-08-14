@@ -1,5 +1,4 @@
 export type Orientation = "vertical" | "horizontal";
-export type ScrollBehavior = "smooth" | "instant";
 
 export type SharedProps = {
   estimatedRowSize?: number | undefined;
@@ -23,6 +22,6 @@ export type Required<T, Keys extends keyof T> = {
 };
 
 export type VirtualListRef = {
-  scrollToIndex: (index: number, scrollBehavior?: ScrollBehavior) => void;
-  scrollToOffset: (offset: number, scrollBehavior?: ScrollBehavior) => void;
+  scrollToIndex: (index: number) => Promise<void>;
+  scrollToOffset: (offset: number) => Promise<void>;
 };

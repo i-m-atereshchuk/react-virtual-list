@@ -55,6 +55,7 @@ function VirtualListViewInnet<T>(
     endIndex,
     containerRef,
     observeRow,
+    calculateRenderRange,
   } = useMeasurement({
     listSize: list.length,
     rowSize,
@@ -74,7 +75,7 @@ function VirtualListViewInnet<T>(
     orientation,
     listSize: list.length,
     totalSize,
-    getOffset,
+    calculateRenderRange,
   });
 
   const children: ReactNode[] = [];

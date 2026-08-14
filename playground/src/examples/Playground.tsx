@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { VirtualList } from "react-virtual-lite";
+import { useState, useRef } from "react";
+import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 
 const data = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
@@ -9,7 +9,8 @@ const data = Array.from({ length: 1000000 }, (_, index) => ({
 
 const dataVertical = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
-  height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
+  // height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
+  height: 50,
 }));
 
 const RowItem = ({
@@ -75,7 +76,10 @@ const RowItemVertical = ({
     </div>
   );
 };
+
 function Playground() {
+  const verticalRef = useRef<VirtualListRef>(null);
+
   return (
     <main
       style={{
@@ -112,6 +116,13 @@ function Playground() {
       </div>
 
       <h1>Vertical</h1>
+      <button
+        onClick={() => {
+          verticalRef.current?.scrollToIndex(100);
+        }}
+      >
+        Scroll to index 10
+      </button>
       <div
         style={{
           height: 650,
@@ -120,6 +131,7 @@ function Playground() {
         }}
       >
         <VirtualList
+          ref={verticalRef}
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
           orientation="vertical"

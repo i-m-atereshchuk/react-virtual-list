@@ -4,7 +4,6 @@ import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 import { useLoadArticles } from "../hooks/use-load-articles";
 
 import { ArticleCard } from "../components/ArticleCard";
-// import { type GuardianArticle } from "../types/article";
 
 export function Guardian() {
   const refVirtualList = useRef<VirtualListRef>(null);
