@@ -250,24 +250,37 @@ export class CalculateRenderRange extends ExternalStore {
     return this.safeRange;
   }
 
-  getScrollOffsetByIndex(index: number) {
-    const realTotalSize = this.measurementStore.getTotal();
-    const itemOffset = this.measurementStore.getOffset(index);
+  getIndexByOffset(offset: number) {
+    return this.measurementStore.findNearestIndex(offset);
+  }
 
+  getScrollOffsetByIndex(index: number) {
+    const virtualOffset = this.measurementStore.getOffset(index);
+
+    return this.getNativeScrollOffset(virtualOffset);
+  }
+
+  getMeasurementVersion() {
+    return this.measurementStore.getVersion();
+  }
+
+  getNativeScrollOffset(virtualOffset: number) {
+    const realTotalSize = this.measurementStore.getTotal();
     const isCompressed = realTotalSize > MAX_SAFE_SCROLL_RANGE;
 
     if (!isCompressed) {
-      return itemOffset;
+      return virtualOffset;
     }
-
-    const safeRange = MAX_SAFE_SCROLL_RANGE;
 
     const maxVirtualScrollTop = Math.max(realTotalSize - this.viewPortSize, 0);
 
-    const maxNativeScrollTop = Math.max(safeRange - this.viewPortSize, 0);
+    const maxNativeScrollTop = Math.max(
+      MAX_SAFE_SCROLL_RANGE - this.viewPortSize,
+      0,
+    );
 
     return virtualScrollToNative(
-      itemOffset,
+      virtualOffset,
       maxNativeScrollTop,
       maxVirtualScrollTop,
     );

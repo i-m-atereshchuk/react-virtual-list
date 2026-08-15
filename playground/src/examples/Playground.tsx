@@ -9,8 +9,8 @@ const data = Array.from({ length: 1000000 }, (_, index) => ({
 
 const dataVertical = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
-  // height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
-  height: 50,
+  height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
+  // height: 50,
 }));
 
 const RowItem = ({
@@ -118,7 +118,8 @@ function Playground() {
       <h1>Vertical</h1>
       <button
         onClick={() => {
-          verticalRef.current?.scrollToIndex(100);
+          // verticalRef.current?.scrollToIndex(793442);
+          verticalRef.current?.scrollToOffset(3000);
         }}
       >
         Scroll to index 10
