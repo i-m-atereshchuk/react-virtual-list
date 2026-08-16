@@ -144,7 +144,6 @@ function Playground() {
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
           orientation="vertical"
-          tabIndex={0}
           renderItem={(item, index) => {
             return (
               <RowItemVertical
