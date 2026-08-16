@@ -54,7 +54,7 @@ const VirtualListInner = <T,>(
   const isReady = size.height > 0 && size.width > 0 && props.list.length > 0;
 
   return (
-    <div ref={divRef} style={style}>
+    <div ref={divRef} style={style} role="none">
       {isReady && (
         <VirtualListView
           {...props}

@@ -15,6 +15,8 @@ export type SharedProps = {
   onReachStart?: (() => void) | undefined;
   onVisibleRangeChange?:
     ((startIndex: number, endIndex: number) => void) | undefined;
+  onScroll?: ((event: React.UIEvent<HTMLDivElement>) => void) | undefined;
+  isLoading?: boolean;
 };
 
 export type Required<T, Keys extends keyof T> = {
