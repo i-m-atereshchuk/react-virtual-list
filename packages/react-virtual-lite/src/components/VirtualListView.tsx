@@ -6,11 +6,12 @@ import {
 } from "react";
 
 import { MeasureRow } from "./MeasureRow";
+import { VirtualListSizer } from "./VirtualListSizer";
 
 import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
 
-import { type SharedProps, type VirtualListRef } from "../types";
+import { type SharedProps, type VirtualListRef } from "../types/List";
 
 export interface VirtualListViewProps<T> extends SharedProps {
   ref?: Ref<VirtualListRef> | undefined;
@@ -36,6 +37,8 @@ function VirtualListViewInnet<T>(
     onVisibleRangeChange,
     onReachEnd,
     onReachStart,
+    onScroll,
+    isLoading = false,
   }: VirtualListViewProps<T>,
   ref: Ref<VirtualListRef>,
 ) {
@@ -55,6 +58,7 @@ function VirtualListViewInnet<T>(
     endIndex,
     containerRef,
     observeRow,
+    calculateRenderRange,
   } = useMeasurement({
     listSize: list.length,
     rowSize,
@@ -74,7 +78,7 @@ function VirtualListViewInnet<T>(
     orientation,
     listSize: list.length,
     totalSize,
-    getOffset,
+    calculateRenderRange,
   });
 
   const children: ReactNode[] = [];
@@ -99,21 +103,22 @@ function VirtualListViewInnet<T>(
     <div
       ref={containerRef}
       style={style}
+      data-testid="react-virtual-lite"
       data-react-virtual-list="list"
+      role="list"
+      aria-busy={isLoading}
       onScroll={(event) => {
         handleScroll(
           orientation === "horizontal"
             ? event.currentTarget.scrollLeft
             : event.currentTarget.scrollTop,
         );
+
+        onScroll?.(event);
       }}
     >
       {children}
-      <div
-        style={{
-          [orientation === "vertical" ? "height" : "width"]: totalSize,
-        }}
-      ></div>
+      <VirtualListSizer totalSize={totalSize} orientation={orientation} />
     </div>
   );
 }

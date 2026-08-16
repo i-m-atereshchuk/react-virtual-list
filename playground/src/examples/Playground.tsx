@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { VirtualList } from "react-virtual-lite";
+import { useState, useRef } from "react";
+import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 
 const data = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
@@ -10,6 +10,7 @@ const data = Array.from({ length: 1000000 }, (_, index) => ({
 const dataVertical = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
   height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
+  // height: 50,
 }));
 
 const RowItem = ({
@@ -48,9 +49,11 @@ const RowItem = ({
 const RowItemVertical = ({
   title,
   height,
+  index,
 }: {
   title: string;
   height: number;
+  index: number;
 }) => {
   const [containerHeight, setContainerHeight] = useState(height);
 
@@ -61,6 +64,8 @@ const RowItemVertical = ({
   return (
     <div
       onClick={handleClick}
+      tabIndex={index}
+      role="listitem"
       style={{
         height: containerHeight,
         display: "flex",
@@ -75,7 +80,12 @@ const RowItemVertical = ({
     </div>
   );
 };
+
+let i = 40;
+
 function Playground() {
+  const verticalRef = useRef<VirtualListRef>(null);
+
   return (
     <main
       style={{
@@ -112,6 +122,16 @@ function Playground() {
       </div>
 
       <h1>Vertical</h1>
+      <button
+        onClick={() => {
+          verticalRef.current?.scrollToIndex(i).then(() => {
+            i += 40;
+          });
+          // verticalRef.current?.scrollToOffset(3000);
+        }}
+      >
+        Scroll to index 10
+      </button>
       <div
         style={{
           height: 650,
@@ -120,11 +140,18 @@ function Playground() {
         }}
       >
         <VirtualList
+          ref={verticalRef}
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
           orientation="vertical"
-          renderItem={(item) => {
-            return <RowItemVertical height={item.height} title={item.title} />;
+          renderItem={(item, index) => {
+            return (
+              <RowItemVertical
+                index={index}
+                height={item.height}
+                title={item.title}
+              />
+            );
           }}
           // onVisibleRangeChange={(startIndex, endIndex) => {
           //   console.log("onVisibleRangeChange", startIndex, endIndex);
@@ -132,6 +159,10 @@ function Playground() {
 
           onReachEnd={() => {
             console.log("onReachEnd");
+          }}
+
+          onScroll={(event) => {
+            console.log("onScroll", event, event.currentTarget.scrollTop);
           }}
 
           onReachStart={() => {

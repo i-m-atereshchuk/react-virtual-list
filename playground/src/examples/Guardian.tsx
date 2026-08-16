@@ -4,8 +4,8 @@ import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 import { useLoadArticles } from "../hooks/use-load-articles";
 
 import { ArticleCard } from "../components/ArticleCard";
-// import { type GuardianArticle } from "../types/article";
 
+let i = 19;
 export function Guardian() {
   const refVirtualList = useRef<VirtualListRef>(null);
   const { articles, onReachEnd } = useLoadArticles();
@@ -13,10 +13,15 @@ export function Guardian() {
   const handleButtonClick = () => {
     refVirtualList.current?.scrollToOffset(1500);
   };
+  console.log("articles", articles.length, i);
   const handleButtonClickIndex = () => {
-    console.log(articles.length);
+    // console.log(articles.length);
+    // console.log("i", i);
 
-    refVirtualList.current?.scrollToIndex(1);
+    refVirtualList.current?.scrollToIndex(i).then(() => {
+      console.log("scrollToIndex completed");
+      i += 10;
+    });
   };
 
   const handleArticleClick = useCallback(() => {}, []);
@@ -51,7 +56,10 @@ export function Guardian() {
           renderItem={(item) => (
             <ArticleCard onClick={handleArticleClick} article={item} />
           )}
-          onReachEnd={onReachEnd}
+          onReachEnd={() => {
+            console.log("onReachEnd");
+            onReachEnd();
+          }}
         />
       </div>
     </main>

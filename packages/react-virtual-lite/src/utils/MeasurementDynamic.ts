@@ -1,4 +1,4 @@
-import { type Measurement } from "./Measurement";
+import { type Measurement } from "../types/Measurement";
 
 import { SizeEstimator } from "../utils/SizeEstimator";
 
@@ -42,9 +42,7 @@ export class MeasurementDynamic implements Measurement {
   setRowSize(index: number, nextSize: number) {
     const nextIndex = index + 1;
 
-    while (this.sizes.length <= nextIndex) {
-      this.pushBack();
-    }
+    this.prefill(nextIndex);
 
     const prevSize = this.sizes[nextIndex];
 
@@ -88,21 +86,10 @@ export class MeasurementDynamic implements Measurement {
     this.offsets[index] = this.sum(index - 1) - this.sum(left - 1) + size;
   }
 
-  findNearestIndexV1(offset: number) {
-    let good = -1;
-    let bad = this.offsets.length;
-
-    while (bad - good > 1) {
-      const m = (good + bad) >> 1;
-
-      if (this.sum(m) <= offset) {
-        good = m;
-      } else {
-        bad = m;
-      }
+  private prefill(index: number) {
+    while (this.sizes.length <= index) {
+      this.pushBack();
     }
-
-    return good;
   }
 
   findNearestIndex(offset: number) {
@@ -131,6 +118,8 @@ export class MeasurementDynamic implements Measurement {
 
   private sum(index: number) {
     let sum = 0;
+
+    this.prefill(index);
 
     while (index > 0) {
       sum += this.offsets[index];

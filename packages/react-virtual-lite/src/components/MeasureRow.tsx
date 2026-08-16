@@ -6,7 +6,7 @@ import {
   type CSSProperties,
 } from "react";
 
-import { type Orientation } from "../types";
+import { type Orientation } from "../types/List";
 
 type MeasureRowProps = {
   index: number;
@@ -51,7 +51,13 @@ function MeasureRowComponent({
   }, [index]);
 
   return (
-    <div ref={containerRef} style={style}>
+    <div
+      ref={containerRef}
+      role="none"
+      data-testid={`react-virtual-lite-list-item-${index}`}
+      data-offset={offset}
+      style={style}
+    >
       {children}
     </div>
   );

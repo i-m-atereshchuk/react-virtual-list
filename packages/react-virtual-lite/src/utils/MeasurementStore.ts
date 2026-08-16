@@ -1,26 +1,27 @@
-import { type Orientation } from "../types";
-import { type Measurement } from "./Measurement";
+import { type Orientation } from "../types/List";
+import { type Measurement } from "../types/Measurement";
 import { SizeEstimator } from "../utils/SizeEstimator";
+import { ExternalStore } from "./ExternalStore";
 
-export class MeasurementStore {
+export class MeasurementStore extends ExternalStore {
   private measurement: Measurement;
   private observer: ResizeObserver;
   private orientation: Orientation;
   private sizeEstimator: SizeEstimator;
 
   private nodeIndexMap = new Map<Element, number>();
-  private listeners = new Set<() => void>();
   private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
-  private version = -1;
 
   constructor(
     measurement: Measurement,
     orientation: Orientation,
     sizeEstimator: SizeEstimator,
   ) {
+    super();
     this.sizeEstimator = sizeEstimator;
     this.measurement = measurement;
     this.orientation = orientation;
+    this.observeRow = this.observeRow.bind(this);
 
     this.observer = new ResizeObserver((entries) => {
       let changed = false;
@@ -56,12 +57,11 @@ export class MeasurementStore {
 
     this.frameRef = requestAnimationFrame(() => {
       this.frameRef = null;
-      this.version = (this.version + 1) % 2;
-      this.listeners.forEach((listener) => listener());
+      this.nextVersion();
     });
   }
 
-  observeRow = (row: Element, index: number) => {
+  observeRow(row: Element, index: number) {
     this.nodeIndexMap.set(row, index);
     this.observer.observe(row);
 
@@ -69,26 +69,21 @@ export class MeasurementStore {
       this.observer.unobserve(row);
       this.nodeIndexMap.delete(row);
     };
-  };
+  }
 
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
+  getOffset(i: number) {
+    return this.measurement.getOffset(i);
+  }
 
-    return () => this.listeners.delete(listener);
-  };
+  getTotal() {
+    return this.measurement.getTotal();
+  }
 
-  getOffset = (i: number) => this.measurement.getOffset(i);
+  findNearestIndex(offset: number) {
+    return this.measurement.findNearestIndex(offset);
+  }
 
-  getTotal = () => this.measurement.getTotal();
-
-  findNearestIndex = (offset: number) =>
-    this.measurement.findNearestIndex(offset);
-
-  getVersion = () => {
-    return this.version;
-  };
-
-  disconnect = () => {
-    this.observer.disconnect();
-  };
+  disconnect() {
+    return this.observer.disconnect();
+  }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { MeasurementDynamic } from "../utils/MeasurementDynamic";
 import { MeasurementStatic } from "../utils/MeasurementStatic";
@@ -6,7 +6,7 @@ import { MeasurementStatic } from "../utils/MeasurementStatic";
 import { MeasurementStore } from "../utils/MeasurementStore";
 import { SizeEstimator } from "../utils/SizeEstimator";
 
-import type { SharedProps, Required } from "../types";
+import type { SharedProps, Required } from "../types/List";
 
 type UseMeasurememtStoreOptions = {
   listSize: number;
@@ -29,6 +29,8 @@ export const useMeasurementStore = ({
 
     return new MeasurementStore(measurement, orientation, sizeEstimator);
   });
+
+  useSyncExternalStore(measurementStore.subscribe, measurementStore.getVersion);
 
   return measurementStore;
 };
