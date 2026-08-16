@@ -26,66 +26,6 @@ export function useVirtualListHandle({
 }: UseVirtualListHandleProps) {
   const scrollOperationId = useRef(0);
 
-  // useImperativeHandle(
-  //   ref,
-  //   () => ({
-  //     async scrollToIndex(index) {
-  //       if (index < 0 || index >= listSize) {
-  //         throw new Error(`Index is out of range [0, ${listSize - 1}]`);
-  //       }
-  //       const startVisibleIndex = calculateRenderRange.getVisibleStartIndex();
-  //       const endVisibleIndex = calculateRenderRange.getVisibleEndIndex();
-
-  //       if (endVisibleIndex === listSize || startVisibleIndex === index - 1) {
-  //         return;
-  //       }
-
-  //       const scroll = () => {
-  //         const container = containerRef.current;
-
-  //         if (!container) {
-  //           return;
-  //         }
-  //         const currentOffset =
-  //           calculateRenderRange.getScrollOffsetByIndex(index);
-  //         console.log("scroll", currentOffset);
-  //         scrollToOffset(container, currentOffset, 0, orientation);
-  //       };
-
-  //       const listener = () => {
-  //         const startVisibleIndex = calculateRenderRange.getVisibleStartIndex();
-  //         const endVisibleIndex = calculateRenderRange.getVisibleEndIndex();
-  //         console.log("endVisibleIndex", endVisibleIndex);
-
-  //         if (endVisibleIndex === listSize || startVisibleIndex === index - 1) {
-  //           console.log("unsubscribe ", endVisibleIndex);
-  //           requestAnimationFrame(scroll);
-  //           calculateRenderRange.unsubscribe(listener);
-  //           return;
-  //         }
-
-  //         requestAnimationFrame(scroll);
-  //       };
-
-  //       calculateRenderRange.subscribe(listener);
-  //       requestAnimationFrame(scroll);
-
-  //       // throw new Error("COMPLETE IMPLE");
-  //     },
-
-  //     async scrollToOffset(offset) {
-  //       if (offset < 0 || offset > totalSize) {
-  //         throw new Error(`Offset is out of range [0, ${totalSize}]`);
-  //       }
-
-  //       if (containerRef.current) {
-  //         scrollToOffset(containerRef.current, offset, 300, orientation);
-  //       }
-  //     },
-  //   }),
-  //   [calculateRenderRange, listSize, scrollTo, totalSize, orientation],
-  // );
-
   useImperativeHandle(ref, () => {
     const isCanceled = (operationId: number) => {
       return operationId !== scrollOperationId.current;
@@ -122,6 +62,7 @@ export function useVirtualListHandle({
         };
 
         const performScroll = () => {
+          // debugger;
           if (isCanceled(operationId)) {
             complete();
             return;
