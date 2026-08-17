@@ -3,7 +3,8 @@ import { useState } from "react";
 import Playground from "./examples/Playground";
 import { Guardian } from "./examples/Guardian";
 
-import { FixedHeightBenchmark } from "./benchmarks/FixedHeightBenchmark";
+import { FixedBenchmark } from "./benchmarks/FixedBenchmark";
+import { DynamicBenchmark } from "./benchmarks/DynamicBenchmark";
 
 const variants = ["Guardian", "Playground"];
 
@@ -18,7 +19,11 @@ function App() {
   const benchmark = params.get("benchmark");
 
   if (benchmark === "fixed") {
-    return <FixedHeightBenchmark />;
+    return <FixedBenchmark />;
+  }
+
+  if (benchmark === "dynamic") {
+    return <DynamicBenchmark />;
   }
 
   return (

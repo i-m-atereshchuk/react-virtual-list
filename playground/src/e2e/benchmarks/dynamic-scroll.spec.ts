@@ -32,8 +32,8 @@ function percentile(values: number[], percentile: number) {
   return sorted[Math.max(0, index)];
 }
 
-test("fixed 50k list scroll", async ({ page }) => {
-  await page.goto("/?benchmark=fixed");
+test("Dynamic 50k list scroll", async ({ page }) => {
+  await page.goto("/?benchmark=dynamic");
 
   const list = page.getByTestId("react-virtual-lite");
 
@@ -171,7 +171,7 @@ test("fixed 50k list scroll", async ({ page }) => {
   const renderItemCalls = runs.map((run) => run.renderItemCalls);
 
   const result = {
-    scenario: "fixed-50k-scroll",
+    scenario: "dynamic-50k-scroll",
 
     config: {
       itemCount: ITEM_COUNT,
