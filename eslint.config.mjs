@@ -14,6 +14,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/*.tgz",
       "**/.changeset/**",
+      "**/benchmark-results/**",
     ],
   },
 
@@ -51,6 +52,18 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
       "react/jsx-uses-react": "off",
+    },
+  },
+  // ------------------------------------------------------------
+  // Node scripts
+  // ------------------------------------------------------------
+  {
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
 

@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { saveBenchmarkResult } from "./helpers/save-result.ts";
+
 const RUNS = 50;
 
 const ITEM_COUNT = 50_000;
@@ -216,4 +218,5 @@ test("fixed 50k list scroll", async ({ page }) => {
 
   console.log("\nBenchmark result:");
   console.log(JSON.stringify(result, null, 2));
+  saveBenchmarkResult(result.scenario, result);
 });

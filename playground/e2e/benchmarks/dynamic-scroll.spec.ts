@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { saveBenchmarkResult } from "./helpers/save-result.ts";
+
 const RUNS = 50;
 const WARMUP_RUNS = 3;
 
@@ -282,6 +284,8 @@ function printResult(
 
   console.log(`\n${scenario} result:`);
   console.log(JSON.stringify(result, null, 2));
+
+  saveBenchmarkResult(result.scenario, result);
 }
 
 /*

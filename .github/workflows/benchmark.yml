@@ -5,19 +5,40 @@ on:
     branches:
       - main
 
-  push:
-    branches:
-      - main
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   benchmark:
+    name: Benchmark vs main
+
     runs-on: ubuntu-latest
 
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+
+      - name: Checkout PR
         uses: actions/checkout@v6
+        with:
+          path: pr
+
+      # - name: Checkout main
+      #   uses: actions/checkout@v6
+      #   with:
+      #     ref: main
+      #     path: main
+
+      # ------------------------------------------------------------
+      # Setup
+      # ------------------------------------------------------------
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -29,12 +50,90 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: pr/pnpm-lock.yaml
 
-      - name: Install dependencies
+      # # After enabling main benchmark:
+      # - name: Setup Node
+      #   uses: actions/setup-node@v6
+      #   with:
+      #     node-version: 22
+      #     cache: pnpm
+      #     cache-dependency-path: |
+      #       pr/pnpm-lock.yaml
+      #       main/pnpm-lock.yaml
+
+      # ------------------------------------------------------------
+      # main
+      # ------------------------------------------------------------
+
+      # - name: Install main dependencies
+      #   working-directory: main
+      #   run: pnpm install --frozen-lockfile
+
+      # - name: Install main Chromium
+      #   working-directory: main
+      #   run: pnpm --filter playground exec playwright install chromium --with-deps
+
+      # - name: Run main benchmark
+      #   working-directory: main
+      #   env:
+      #     BENCHMARK_OUTPUT_DIR: benchmark-results
+      #   run: pnpm benchmark
+
+      # ------------------------------------------------------------
+      # PR
+      # ------------------------------------------------------------
+
+      - name: Install PR dependencies
+        working-directory: pr
         run: pnpm install --frozen-lockfile
 
-      - name: Install Chromium
+      - name: Install PR Chromium
+        working-directory: pr
         run: pnpm --filter playground exec playwright install chromium --with-deps
 
-      - name: Run benchmark
+      - name: Run PR benchmark
+        working-directory: pr
+        env:
+          BENCHMARK_OUTPUT_DIR: benchmark-results
         run: pnpm benchmark
+
+      # ------------------------------------------------------------
+      # Compare
+      #
+      # scripts/
+      #   compare-benchmarks.mjs
+      #
+      # playground/
+      #   benchmark-results/
+      # ------------------------------------------------------------
+
+      # - name: Compare benchmarks
+      #   working-directory: pr
+      #   run: |
+      #     node scripts/compare-benchmarks.mjs \
+      #       ../main/playground/benchmark-results \
+      #       playground/benchmark-results
+
+      # ------------------------------------------------------------
+      # Artifacts
+      # ------------------------------------------------------------
+
+      # # # After enabling main benchmark:
+      # - name: Upload benchmark results
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: benchmark-results-${{ github.event.pull_request.number }}
+      #     path: |
+      #       main/playground/benchmark-results
+      #       pr/playground/benchmark-results
+      #     retention-days: 30
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.event.pull_request.number }}
+          path: pr/playground/benchmark-results
+          retention-days: 30

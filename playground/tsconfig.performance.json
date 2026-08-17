@@ -7,5 +7,9 @@
     "lib": ["ES2023", "DOM"],
     "noEmit": true
   },
-  "include": ["performance/**/*.ts", "src/types/benchmark.d.ts"]
+  "include": [
+    "src/types/benchmark.d.ts",
+    "e2e/benchmarks/**/*.ts",
+    "playwright.benchmark.config.ts"
+  ]
 }
