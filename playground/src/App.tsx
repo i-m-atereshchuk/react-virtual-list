@@ -3,6 +3,8 @@ import { useState } from "react";
 import Playground from "./examples/Playground";
 import { Guardian } from "./examples/Guardian";
 
+import { FixedHeightBenchmark } from "./benchmarks/FixedHeightBenchmark";
+
 const variants = ["Guardian", "Playground"];
 
 function App() {
@@ -11,6 +13,13 @@ function App() {
   const svitch = () => {
     setvVsibleIndex((prev) => (prev + 1) % variants.length);
   };
+
+  const params = new URLSearchParams(window.location.search);
+  const benchmark = params.get("benchmark");
+
+  if (benchmark === "fixed") {
+    return <FixedHeightBenchmark />;
+  }
 
   return (
     <div>
