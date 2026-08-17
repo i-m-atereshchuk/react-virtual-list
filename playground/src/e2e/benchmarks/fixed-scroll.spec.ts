@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const RUNS = 10;
+const RUNS = 50;
 
 const ITEM_COUNT = 50_000;
 const ROW_SIZE = 40;
