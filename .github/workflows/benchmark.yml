@@ -30,11 +30,11 @@ jobs:
         with:
           path: pr
 
-      # - name: Checkout main
-      #   uses: actions/checkout@v6
-      #   with:
-      #     ref: main
-      #     path: main
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          path: main
 
       # ------------------------------------------------------------
       # Setup
@@ -46,40 +46,33 @@ jobs:
           version: 11.20.0
           run_install: false
 
+      # # After enabling main benchmark:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: pr/pnpm-lock.yaml
-
-      # # After enabling main benchmark:
-      # - name: Setup Node
-      #   uses: actions/setup-node@v6
-      #   with:
-      #     node-version: 22
-      #     cache: pnpm
-      #     cache-dependency-path: |
-      #       pr/pnpm-lock.yaml
-      #       main/pnpm-lock.yaml
+          cache-dependency-path: |
+            pr/pnpm-lock.yaml
+            main/pnpm-lock.yaml
 
       # ------------------------------------------------------------
       # main
       # ------------------------------------------------------------
 
-      # - name: Install main dependencies
-      #   working-directory: main
-      #   run: pnpm install --frozen-lockfile
+      - name: Install main dependencies
+        working-directory: main
+        run: pnpm install --frozen-lockfile
 
-      # - name: Install main Chromium
-      #   working-directory: main
-      #   run: pnpm --filter playground exec playwright install chromium --with-deps
+      - name: Install main Chromium
+        working-directory: main
+        run: pnpm --filter playground exec playwright install chromium --with-deps
 
-      # - name: Run main benchmark
-      #   working-directory: main
-      #   env:
-      #     BENCHMARK_OUTPUT_DIR: benchmark-results
-      #   run: pnpm benchmark
+      - name: Run main benchmark
+        working-directory: main
+        env:
+          BENCHMARK_OUTPUT_DIR: benchmark-results
+        run: pnpm benchmark
 
       # ------------------------------------------------------------
       # PR
@@ -109,32 +102,24 @@ jobs:
       #   benchmark-results/
       # ------------------------------------------------------------
 
-      # - name: Compare benchmarks
-      #   working-directory: pr
-      #   run: |
-      #     node scripts/compare-benchmarks.mjs \
-      #       ../main/playground/benchmark-results \
-      #       playground/benchmark-results
+      - name: Compare benchmarks
+        working-directory: pr
+        run: |
+          node scripts/compare-benchmarks.mjs \
+            ../main/playground/benchmark-results \
+            playground/benchmark-results
 
       # ------------------------------------------------------------
       # Artifacts
       # ------------------------------------------------------------
 
       # # # After enabling main benchmark:
-      # - name: Upload benchmark results
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: benchmark-results-${{ github.event.pull_request.number }}
-      #     path: |
-      #       main/playground/benchmark-results
-      #       pr/playground/benchmark-results
-      #     retention-days: 30
-
       - name: Upload benchmark results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results-${{ github.event.pull_request.number }}
-          path: pr/playground/benchmark-results
+          path: |
+            main/playground/benchmark-results
+            pr/playground/benchmark-results
           retention-days: 30
