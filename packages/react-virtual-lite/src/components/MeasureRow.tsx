@@ -54,6 +54,7 @@ function MeasureRowComponent({
     <div
       ref={containerRef}
       role="none"
+      data-virtual-row
       data-testid={`react-virtual-lite-list-item-${index}`}
       data-offset={offset}
       style={style}

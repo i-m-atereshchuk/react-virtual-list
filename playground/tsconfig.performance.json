@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.node.json",
+  "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.performance.tsbuildinfo",
+    "types": ["node", "@playwright/test"],
+    "lib": ["ES2023", "DOM"],
+    "noEmit": true
+  },
+  "include": [
+    "src/types/benchmark.d.ts",
+    "e2e/benchmarks/**/*.ts",
+    "playwright.benchmark.config.ts"
+  ]
+}
