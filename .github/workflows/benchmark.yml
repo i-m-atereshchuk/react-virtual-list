@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Chromium
-        run: pnpm --filte playground exec playwright install chromium --with-deps
+        run: pnpm --filter playground exec playwright install chromium --with-deps
 
       - name: Run benchmark
         run: pnpm benchmark
