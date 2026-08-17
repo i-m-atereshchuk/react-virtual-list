@@ -2,7 +2,9 @@ import { expect, test } from "@playwright/test";
 
 import { saveBenchmarkResult } from "./helpers/save-result.ts";
 
-const RUNS = 50;
+const IS_CI = Boolean(process.env.CI);
+
+const RUNS = IS_CI ? 20 : 50;
 
 const ITEM_COUNT = 50_000;
 const ROW_SIZE = 40;

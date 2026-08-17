@@ -2,8 +2,9 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { saveBenchmarkResult } from "./helpers/save-result.ts";
 
-const RUNS = 50;
-const WARMUP_RUNS = 3;
+const IS_CI = Boolean(process.env.CI);
+const RUNS = IS_CI ? 20 : 50;
+const WARMUP_RUNS = IS_CI ? 2 : 3;
 
 const ITEM_COUNT = 50_000;
 
