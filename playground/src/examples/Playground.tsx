@@ -158,15 +158,15 @@ function Playground() {
           // }}
 
           onReachEnd={() => {
-            console.log("onReachEnd");
+            // console.log("onReachEnd");
           }}
 
-          onScroll={(event) => {
-            console.log("onScroll", event, event.currentTarget.scrollTop);
+          onScroll={() => {
+            // console.log("onScroll", event, event.currentTarget.scrollTop);
           }}
 
           onReachStart={() => {
-            console.log("onReachStart");
+            // console.log("onReachStart");
           }}
         />
       </div>

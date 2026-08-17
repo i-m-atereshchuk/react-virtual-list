@@ -22,7 +22,7 @@ export interface VirtualListViewProps<T> extends SharedProps {
   keyExtractor: (item: T, index: number) => string;
 }
 
-function VirtualListViewInnet<T>(
+function VirtualListViewInner<T>(
   {
     viewPortHeight = 400,
     viewPortWidth = 400,
@@ -123,6 +123,6 @@ function VirtualListViewInnet<T>(
   );
 }
 
-export const VirtualListView = forwardRef(VirtualListViewInnet) as <T>(
+export const VirtualListView = forwardRef(VirtualListViewInner) as <T>(
   props: VirtualListViewProps<T> & { ref?: Ref<VirtualListRef> },
 ) => ReactNode;

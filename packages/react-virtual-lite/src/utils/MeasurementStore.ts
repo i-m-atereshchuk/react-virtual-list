@@ -9,6 +9,8 @@ export class MeasurementStore extends ExternalStore {
   private orientation: Orientation;
   private sizeEstimator: SizeEstimator;
 
+  private pendingSizes = new Map<number, number>();
+
   private nodeIndexMap = new Map<Element, number>();
   private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
 
@@ -22,10 +24,9 @@ export class MeasurementStore extends ExternalStore {
     this.measurement = measurement;
     this.orientation = orientation;
     this.observeRow = this.observeRow.bind(this);
+    this.flush = this.flush.bind(this);
 
     this.observer = new ResizeObserver((entries) => {
-      let changed = false;
-
       for (const row of entries) {
         const rowIndex = this.nodeIndexMap.get(row.target);
 
@@ -37,28 +38,37 @@ export class MeasurementStore extends ExternalStore {
           this.orientation === "vertical"
             ? row.contentRect.height
             : row.contentRect.width;
-        const rowChanged = this.measurement.setRowSize(rowIndex, nextSize);
 
-        this.sizeEstimator.addSize(nextSize, rowIndex);
-
-        changed = changed || rowChanged;
+        this.pendingSizes.set(rowIndex, nextSize);
       }
 
-      if (changed) {
-        this.scheduleUpdate();
+      if (this.frameRef === null) {
+        this.frameRef = requestAnimationFrame(this.flush);
       }
     });
   }
 
-  private scheduleUpdate() {
-    if (this.frameRef) {
-      return;
+  private flush() {
+    this.frameRef = null;
+
+    const processingSizes = this.pendingSizes;
+    this.pendingSizes = new Map<number, number>();
+
+    let changed = false;
+
+    for (const [rowIndex, nextSize] of processingSizes) {
+      const rowChanged = this.measurement.setRowSize(rowIndex, nextSize);
+      this.sizeEstimator.addSize(nextSize, rowIndex);
+      changed = changed || rowChanged;
     }
 
-    this.frameRef = requestAnimationFrame(() => {
-      this.frameRef = null;
+    if (changed) {
       this.nextVersion();
-    });
+    }
+
+    if (this.pendingSizes.size > 0 && this.frameRef === null) {
+      this.frameRef = requestAnimationFrame(this.flush);
+    }
   }
 
   observeRow(row: Element, index: number) {
@@ -84,6 +94,14 @@ export class MeasurementStore extends ExternalStore {
   }
 
   disconnect() {
-    return this.observer.disconnect();
+    this.observer.disconnect();
+
+    if (this.frameRef !== null) {
+      cancelAnimationFrame(this.frameRef);
+      this.frameRef = null;
+    }
+
+    this.pendingSizes.clear();
+    this.nodeIndexMap.clear();
   }
 }
