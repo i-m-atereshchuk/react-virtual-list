@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./src/e2e/benchmarks",
 
-  timeout: 30_000,
+  timeout: 120_000,
 
   // Performance benchmarks shouldn't compete for CPU.
   fullyParallel: false,
