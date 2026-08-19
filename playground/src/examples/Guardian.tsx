@@ -13,11 +13,8 @@ export function Guardian() {
   const handleButtonClick = () => {
     refVirtualList.current?.scrollToOffset(1500);
   };
-  console.log("articles", articles.length, i);
-  const handleButtonClickIndex = () => {
-    // console.log(articles.length);
-    // console.log("i", i);
 
+  const handleButtonClickIndex = () => {
     refVirtualList.current?.scrollToIndex(i).then(() => {
       console.log("scrollToIndex completed");
       i += 10;
@@ -57,7 +54,6 @@ export function Guardian() {
             <ArticleCard onClick={handleArticleClick} article={item} />
           )}
           onReachEnd={() => {
-            console.log("onReachEnd");
             onReachEnd();
           }}
         />

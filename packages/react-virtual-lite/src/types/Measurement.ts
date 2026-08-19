@@ -4,4 +4,5 @@ export interface Measurement {
   getOffset(index: number): number;
   getTotal(): number;
   findNearestIndex(offset: number): number;
+  getVersion(): number;
 }

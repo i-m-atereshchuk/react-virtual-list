@@ -3,13 +3,16 @@ import {
   type CSSProperties,
   type ReactNode,
   type Ref,
+  useRef,
 } from "react";
 
 import { MeasureRow } from "./MeasureRow";
 import { VirtualListSizer } from "./VirtualListSizer";
 
-import { useMeasurement } from "../hooks/use-measurement";
+// import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
+
+import { useVirtualized } from "../hooks/use-virtualized";
 
 import { type SharedProps, type VirtualListRef } from "../types/List";
 
@@ -42,6 +45,8 @@ function VirtualListViewInner<T>(
   }: VirtualListViewProps<T>,
   ref: Ref<VirtualListRef>,
 ) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const style: CSSProperties = {
     height: viewPortHeight,
     width: viewPortWidth,
@@ -50,26 +55,47 @@ function VirtualListViewInner<T>(
     position: "relative",
   };
 
+  // const {
+  //   // getOffset,
+  //   // totalSize,
+  //   // handleScroll,
+  //   // startIndex,
+  //   // endIndex,
+  //   // containerRef,
+  //   // observeRow,
+  //   // calculateRenderRange,
+  // } = useMeasurement({
+  //   listSize: list.length,
+  //   rowSize,
+  //   estimatedRowSize,
+  //   overscan,
+  //   viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
+  //   orientation,
+  //   onVisibleRangeChange,
+  //   remainingItemsThreshold,
+  //   onReachEnd,
+  //   onReachStart,
+  // });
+
   const {
+    renderRange,
+    observeRow,
     getOffset,
     totalSize,
     handleScroll,
     startIndex,
     endIndex,
-    containerRef,
-    observeRow,
-    calculateRenderRange,
-  } = useMeasurement({
-    listSize: list.length,
+  } = useVirtualized({
     rowSize,
+    listSize: list.length,
     estimatedRowSize,
-    overscan,
-    viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
     orientation,
-    onVisibleRangeChange,
-    remainingItemsThreshold,
+    viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
+    overscan,
     onReachEnd,
     onReachStart,
+    onVisibleRangeChange,
+    remainingItemsThreshold,
   });
 
   useVirtualListHandle({
@@ -78,7 +104,7 @@ function VirtualListViewInner<T>(
     orientation,
     listSize: list.length,
     totalSize,
-    calculateRenderRange,
+    calculateRenderRange: renderRange,
   });
 
   const children: ReactNode[] = [];

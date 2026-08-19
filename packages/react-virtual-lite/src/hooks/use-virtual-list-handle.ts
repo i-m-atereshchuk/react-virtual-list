@@ -3,7 +3,7 @@ import { useImperativeHandle, type Ref, type RefObject, useRef } from "react";
 import type { VirtualListRef } from "../types/List";
 
 import { scrollToOffset } from "../utils/scroll-to-offset";
-import { CalculateRenderRange } from "../utils/CalculateRenderRange";
+import { CalculateRenderRange } from "../core/CalculateRenderRange";
 
 const SCROLL_CORRECTION_MAX = 10;
 
@@ -62,7 +62,6 @@ export function useVirtualListHandle({
         };
 
         const performScroll = () => {
-          // debugger;
           if (isCanceled(operationId)) {
             complete();
             return;
