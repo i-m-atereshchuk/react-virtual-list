@@ -1,3 +1,4 @@
+// moved to core
 import { type Measurement } from "../types/Measurement";
 
 import { SizeEstimator } from "../utils/SizeEstimator";
@@ -24,6 +25,10 @@ export class MeasurementDynamic implements Measurement {
   private sizes: number[];
   private total: TotalScrollSize;
   private sizeEstimator: SizeEstimator;
+
+  getVersion(): number {
+    return 0;
+  }
 
   constructor(initListSize: number, sizeEstimator: SizeEstimator) {
     this.sizeEstimator = sizeEstimator;

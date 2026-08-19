@@ -1,8 +1,13 @@
+// moved to core
 import { type Measurement } from "../types/Measurement";
 
 export class MeasurementStatic implements Measurement {
   private initListSize: number;
   private initRowSize: number;
+
+  getVersion(): number {
+    return 0;
+  }
 
   constructor(initListSize: number, initRowSize: number) {
     this.initListSize = initListSize;

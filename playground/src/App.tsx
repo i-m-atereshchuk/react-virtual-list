@@ -9,7 +9,7 @@ import { DynamicBenchmark } from "./benchmarks/DynamicBenchmark";
 const variants = ["Guardian", "Playground"];
 
 function App() {
-  const [visibleIndex, setvVsibleIndex] = useState(0);
+  const [visibleIndex, setvVsibleIndex] = useState(1);
 
   const svitch = () => {
     setvVsibleIndex((prev) => (prev + 1) % variants.length);
