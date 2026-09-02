@@ -1,33 +1,61 @@
 export class SizeEstimator {
   private totalSize = 0;
   private count = 0;
-  private sizeMap = new Map<number, number>();
-  private size: number;
 
-  constructor(size: number) {
-    this.size = size;
+  private sizes: Uint32Array;
+
+  constructor(
+    private defaultSize: number,
+    initialCapacity = 16,
+  ) {
+    this.sizes = new Uint32Array(initialCapacity);
   }
 
   addSize(size: number, index: number) {
-    let prevSize = this.sizeMap.get(index);
-    let count = 0;
-
-    if (prevSize === undefined) {
-      prevSize = 0;
-      count = 1;
+    if (size === 0) {
+      throw new Error("Size must be greater than 0");
     }
 
-    this.totalSize -= prevSize;
+    this.ensureCapacity(index);
+
+    const prevSize = this.sizes[index];
+
+    if (prevSize === size) {
+      return;
+    }
+
+    if (prevSize === 0) {
+      this.count++;
+    } else {
+      this.totalSize -= prevSize;
+    }
+
+    this.sizes[index] = size;
     this.totalSize += size;
-    this.sizeMap.set(index, size);
-    this.count += count;
   }
 
   getEstimatedSize() {
     if (this.count === 0) {
-      return this.size;
+      return this.defaultSize;
     }
 
     return this.totalSize / this.count;
+  }
+
+  private ensureCapacity(index: number) {
+    if (index < this.sizes.length) {
+      return;
+    }
+
+    let capacity = this.sizes.length || 1;
+
+    while (capacity <= index) {
+      capacity *= 2;
+    }
+
+    const sizes = new Uint32Array(capacity);
+    sizes.set(this.sizes);
+
+    this.sizes = sizes;
   }
 }

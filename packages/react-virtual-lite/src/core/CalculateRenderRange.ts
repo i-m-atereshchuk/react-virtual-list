@@ -34,7 +34,7 @@ type InitCalculateRenderRange = {
 
 export class CalculateRenderRange implements CalculationNode {
   private prevScroll = 0;
-  private scroll = 0;
+  private scroll = -1;
   private pendingScroll = 0;
   private realScrollTop = 0;
 
@@ -48,7 +48,10 @@ export class CalculateRenderRange implements CalculationNode {
 
   private safeRange = 0;
 
+  private propertiesDirty = true;
+
   private measurement: Measurement;
+  private measurementVersion: number;
   private viewPortSize: number;
   private overscan: number;
   private listSize: number;
@@ -69,6 +72,7 @@ export class CalculateRenderRange implements CalculationNode {
     remainingItemsThreshold,
   }: InitCalculateRenderRange) {
     this.measurement = measurement;
+    this.measurementVersion = measurement.getVersion();
     this.viewPortSize = viewPortSize;
     this.overscan = overscan;
     this.listSize = listSize;
@@ -82,8 +86,7 @@ export class CalculateRenderRange implements CalculationNode {
     this.handleScroll = this.handleScroll.bind(this);
     this.getOffset = this.getOffset.bind(this);
     this.getScrollOffsetByIndex = this.getScrollOffsetByIndex.bind(this);
-
-    this.handleScroll(0);
+    this.calculate();
   }
 
   handleScroll(scroll: number) {
@@ -92,8 +95,23 @@ export class CalculateRenderRange implements CalculationNode {
   }
 
   calculate(): void {
+    const nextMeasurementVersion = this.measurement.getVersion();
+
+    const measurementChanged =
+      nextMeasurementVersion !== this.measurementVersion;
+
+    const scrollChanged = this.pendingScroll !== this.scroll;
+    const propertiesChanged = this.propertiesDirty;
+
+    if (!measurementChanged && !scrollChanged && !propertiesChanged) {
+      return;
+    }
+
     this.prevScroll = this.scroll;
     this.scroll = this.pendingScroll;
+
+    this.measurementVersion = nextMeasurementVersion;
+    this.propertiesDirty = false;
 
     const calculatedRange = this.calculateRange();
 
@@ -136,12 +154,21 @@ export class CalculateRenderRange implements CalculationNode {
     listSize,
     remainingItemsThreshold,
   }: UppdateProperties) {
+    const layoutChanged =
+      this.viewPortSize !== viewPortSize ||
+      this.overscan !== overscan ||
+      this.listSize !== listSize;
+
     this.viewPortSize = viewPortSize;
     this.overscan = overscan;
     this.listSize = listSize;
+
     this.remainingItemsThreshold = remainingItemsThreshold;
 
-    this.notify();
+    if (layoutChanged) {
+      this.propertiesDirty = true;
+      this.notify();
+    }
   }
 
   uppdateCallbacks({

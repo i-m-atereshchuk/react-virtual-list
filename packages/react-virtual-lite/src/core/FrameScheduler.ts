@@ -14,14 +14,12 @@ export class FrameScheduler {
     this.subscribe = this.subscribe.bind(this);
     this.getVestion = this.getVestion.bind(this);
     this.flush = this.flush.bind(this);
+    this.connect = this.connect.bind(this);
+
     this.nodeListeners = Array.from(
       { length: nodes.length },
       (_, index) => () => this.dirtyListener(index),
     );
-
-    for (let i = 0; i < nodes.length; i++) {
-      nodes[i].subscribe(this.nodeListeners[i]);
-    }
   }
 
   private reset() {
@@ -73,11 +71,15 @@ export class FrameScheduler {
     return this.version;
   }
 
+  connect() {
+    for (let i = 0; i < this.nodes.length; i++) {
+      this.nodes[i].subscribe(this.nodeListeners[i]);
+    }
+  }
+
   disconect() {
     this.nodes.forEach((node, index) => {
       node.unsubscribe(this.nodeListeners[index]);
     });
-
-    this.nodeListeners.length = 0;
   }
 }

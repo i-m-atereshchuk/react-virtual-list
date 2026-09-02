@@ -80,6 +80,14 @@ export const useVirtualized = ({
     });
   }, [onReachEnd, onReachEnd, onVisibleRangeChange]);
 
+  useEffect(() => {
+    frameScheduler.connect();
+
+    return () => {
+      frameScheduler.disconect();
+    };
+  }, []);
+
   return {
     totalSize: calculateRenderRange.getSafeRange(),
     getOffset: calculateRenderRange.getOffset,
