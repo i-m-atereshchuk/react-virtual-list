@@ -2,13 +2,13 @@ export class SizeEstimator {
   private totalSize = 0;
   private count = 0;
 
-  private sizes: Uint32Array;
+  private sizes: Float32Array;
 
   constructor(
     private defaultSize: number,
     initialCapacity = 16,
   ) {
-    this.sizes = new Uint32Array(initialCapacity);
+    this.sizes = new Float32Array(initialCapacity);
   }
 
   addSize(size: number, index: number) {
@@ -53,7 +53,7 @@ export class SizeEstimator {
       capacity *= 2;
     }
 
-    const sizes = new Uint32Array(capacity);
+    const sizes = new Float32Array(capacity);
     sizes.set(this.sizes);
 
     this.sizes = sizes;
