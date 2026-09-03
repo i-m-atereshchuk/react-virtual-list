@@ -83,7 +83,7 @@ export function useVirtualListHandle({
           scheduleCheck();
         };
 
-        const chenck = () => {
+        const check = () => {
           frameId = null;
 
           if (isCanceled(operationId)) {
@@ -120,7 +120,7 @@ export function useVirtualListHandle({
             cancelAnimationFrame(frameId);
           }
 
-          frameId = requestAnimationFrame(chenck);
+          frameId = requestAnimationFrame(check);
         };
 
         const cleanup = () => {
