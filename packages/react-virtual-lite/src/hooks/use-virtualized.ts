@@ -2,8 +2,7 @@ import { useState, useSyncExternalStore, useEffect } from "react";
 
 import { SizeEstimator } from "../core/SizeEstimator";
 import { MeasurementStatic } from "../core/MeasurementStatic";
-// import { MeasurementDynamic } from "../core/MeasurementDynamic";
-import { MeasurementDynamicV2 } from "../core/MeasurementDynamicV2";
+import { MeasurementDynamic } from "../core/MeasurementDynamic";
 import { MeasurementStore } from "../core/MeasurementStore";
 import { CalculateRenderRange } from "../core/CalculateRenderRange";
 import { FrameScheduler } from "../core/FrameScheduler";
@@ -38,7 +37,7 @@ export const useVirtualized = ({
   const [measurement] = useState(() => {
     return typeof rowSize === "number"
       ? new MeasurementStatic(listSize, rowSize)
-      : new MeasurementDynamicV2(listSize, new SizeEstimator(estimatedRowSize));
+      : new MeasurementDynamic(listSize, new SizeEstimator(estimatedRowSize));
   });
 
   const [measurementStore] = useState(() => {
