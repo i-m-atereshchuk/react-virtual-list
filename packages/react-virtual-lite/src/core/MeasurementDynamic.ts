@@ -14,6 +14,7 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   private sizeEstimator: SizeEstimator;
   private lastMeasuredIndex = -1;
   private version = -1;
+  private highestBit = 0;
 
   constructor(listSize: number, sizeEstimator: SizeEstimator) {
     this.sizeEstimator = sizeEstimator;
@@ -29,6 +30,7 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
 
     this.calculate = this.calculate.bind(this);
     this.initOffsets();
+    this.updateHighestBit();
   }
 
   setRowSize(index: number, nextSize: number): boolean {
@@ -50,11 +52,7 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
     let index = 0;
     let sum = 0;
 
-    let bit = 1;
-
-    while (bit << 1 < this.offsets.length) {
-      bit <<= 1;
-    }
+    let bit = this.highestBit;
 
     while (bit !== 0) {
       const next = index + bit;
@@ -131,28 +129,60 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   }
 
   private notify(): void {
-    this.listeners.forEach((callback) => callback());
-  }
-
-  private pushBack() {
-    const index = this.sizes.length;
-    const size = this.sizeEstimator.getEstimatedSize();
-
-    this.sizes.push(size);
-    this.offsets.push(0);
-    this.calculatedOffsets.push(0);
-
-    const lowbit = index & -index;
-    const left = index - lowbit + 1;
-    this.total.updateTotal(0, size);
-
-    this.offsets[index] = this.sum(index - 1) - this.sum(left - 1) + size;
+    for (const callback of this.listeners) {
+      callback();
+    }
   }
 
   private prefill(index: number) {
-    while (this.sizes.length <= index) {
-      this.pushBack();
+    if (this.sizes.length > index) {
+      return;
     }
+
+    this.growTo(index + 1);
+  }
+
+  private growTo(newLength: number) {
+    const oldLength = this.sizes.length;
+
+    if (newLength <= oldLength) {
+      return;
+    }
+
+    const estimatedSize = this.sizeEstimator.getEstimatedSize();
+    const addedCount = newLength - oldLength;
+
+    this.sizes = this.sizes.concat(new Array(addedCount).fill(estimatedSize));
+    this.offsets = this.offsets.concat(new Array(addedCount).fill(0));
+    this.calculatedOffsets = this.calculatedOffsets.concat(
+      new Array(addedCount).fill(0),
+    );
+
+    let idx = oldLength - 1;
+
+    while (idx > 0) {
+      const lowbit = idx & -idx;
+      const parent = idx + lowbit;
+
+      if (parent < newLength) {
+        this.offsets[parent] += this.offsets[idx];
+      }
+
+      idx -= lowbit;
+    }
+
+    for (let i = oldLength; i < newLength; i++) {
+      this.offsets[i] += this.sizes[i];
+
+      const parent = i + (i & -i);
+
+      if (parent < newLength) {
+        this.offsets[parent] += this.offsets[i];
+      }
+    }
+
+    this.total.updateTotal(0, addedCount * estimatedSize);
+    this.updateHighestBit();
   }
 
   private sum(index: number) {
@@ -178,6 +208,16 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
         this.offsets[parent] += this.offsets[i];
       }
     }
+  }
+
+  private updateHighestBit() {
+    let bit = 1;
+
+    while (bit << 1 < this.offsets.length) {
+      bit <<= 1;
+    }
+
+    this.highestBit = bit;
   }
 
   private add(index: number, value: number) {
