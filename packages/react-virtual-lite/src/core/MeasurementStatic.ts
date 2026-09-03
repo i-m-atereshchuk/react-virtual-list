@@ -19,7 +19,7 @@ export class MeasurementStatic implements Measurement, CalculationNode {
       return true;
     }
 
-    if (nextSize === this.listSize) {
+    if (nextSize === this.rowSize) {
       return false;
     }
 
