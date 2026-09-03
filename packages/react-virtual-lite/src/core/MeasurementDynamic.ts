@@ -34,11 +34,8 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   setRowSize(index: number, nextSize: number): boolean {
     const nextIndex = index + 1;
 
-    let currentSize = this.sizes[nextIndex];
-
-    if (nextIndex < this.sizes.length) {
-      currentSize = this.sizes[nextIndex];
-    }
+    const currentSize =
+      nextIndex < this.sizes.length ? this.sizes[nextIndex] : 0;
 
     if (Math.abs(currentSize - nextSize) > 0.5) {
       this.pendingSizes.set(nextIndex, nextSize);
