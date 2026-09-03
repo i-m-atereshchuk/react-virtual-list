@@ -12,7 +12,7 @@ export class FrameScheduler {
   constructor(nodes: CalculationNode[]) {
     this.nodes = nodes;
     this.subscribe = this.subscribe.bind(this);
-    this.getVestion = this.getVestion.bind(this);
+    this.getVersion = this.getVersion.bind(this);
     this.flush = this.flush.bind(this);
     this.connect = this.connect.bind(this);
 
@@ -49,14 +49,14 @@ export class FrameScheduler {
       this.nodes[i].calculate();
     }
 
-    this.commint();
+    this.commit();
 
     if (this.minDirtyPublisherIndex !== Infinity) {
       this.requestFrame();
     }
   }
 
-  private commint() {
+  private commit() {
     this.version += 1;
     this.listeners.forEach((listener) => listener());
   }
@@ -67,7 +67,7 @@ export class FrameScheduler {
     return () => this.listeners.delete(listener);
   }
 
-  getVestion() {
+  getVersion() {
     return this.version;
   }
 
@@ -77,7 +77,7 @@ export class FrameScheduler {
     }
   }
 
-  disconect() {
+  disconnect() {
     this.nodes.forEach((node, index) => {
       node.unsubscribe(this.nodeListeners[index]);
     });

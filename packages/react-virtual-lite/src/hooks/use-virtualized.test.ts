@@ -30,10 +30,10 @@ const mocks = vi.hoisted(() => {
 
   const frameScheduler = {
     subscribe: vi.fn(() => vi.fn()),
-    getVestion: vi.fn(() => 0),
+    getVersion: vi.fn(() => 0),
 
     connect: vi.fn(),
-    disconect: vi.fn(),
+    disconnect: vi.fn(),
   };
 
   return {
@@ -117,7 +117,7 @@ describe("useVirtualized", () => {
     mocks.calculateRenderRange.getEndIndex.mockReturnValue(8);
 
     mocks.frameScheduler.subscribe.mockImplementation(() => vi.fn());
-    mocks.frameScheduler.getVestion.mockReturnValue(0);
+    mocks.frameScheduler.getVersion.mockReturnValue(0);
   });
 
   it("creates MeasurementStatic when rowSize is a number", () => {
@@ -201,11 +201,11 @@ describe("useVirtualized", () => {
   it("disconnects FrameScheduler on unmount", () => {
     const { unmount } = renderHook(() => useVirtualized(defaultProps));
 
-    expect(mocks.frameScheduler.disconect).not.toHaveBeenCalled();
+    expect(mocks.frameScheduler.disconnect).not.toHaveBeenCalled();
 
     unmount();
 
-    expect(mocks.frameScheduler.disconect).toHaveBeenCalledTimes(1);
+    expect(mocks.frameScheduler.disconnect).toHaveBeenCalledTimes(1);
   });
 
   it("updates CalculateRenderRange properties on mount", () => {
@@ -297,6 +297,6 @@ describe("useVirtualized", () => {
     renderHook(() => useVirtualized(defaultProps));
 
     expect(mocks.frameScheduler.subscribe).toHaveBeenCalled();
-    expect(mocks.frameScheduler.getVestion).toHaveBeenCalled();
+    expect(mocks.frameScheduler.getVersion).toHaveBeenCalled();
   });
 });

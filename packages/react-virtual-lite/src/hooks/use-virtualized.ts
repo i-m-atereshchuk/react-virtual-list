@@ -61,7 +61,7 @@ export const useVirtualized = ({
     return new FrameScheduler([measurement, calculateRenderRange]);
   });
 
-  useSyncExternalStore(frameScheduler.subscribe, frameScheduler.getVestion);
+  useSyncExternalStore(frameScheduler.subscribe, frameScheduler.getVersion);
 
   useEffect(() => {
     calculateRenderRange.uppdateProperties({
@@ -84,7 +84,7 @@ export const useVirtualized = ({
     frameScheduler.connect();
 
     return () => {
-      frameScheduler.disconect();
+      frameScheduler.disconnect();
     };
   }, []);
 
