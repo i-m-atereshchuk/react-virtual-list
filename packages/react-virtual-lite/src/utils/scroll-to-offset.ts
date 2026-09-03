@@ -5,6 +5,12 @@ export function scrollToOffset(
   orientation: "horizontal" | "vertical" = "vertical",
 ) {
   const prop = orientation === "horizontal" ? "scrollLeft" : "scrollTop";
+
+  if (duration <= 0) {
+    element[prop] = target;
+    return;
+  }
+
   const start = element[prop];
   const distance = target - start;
   const startTime = performance.now();
