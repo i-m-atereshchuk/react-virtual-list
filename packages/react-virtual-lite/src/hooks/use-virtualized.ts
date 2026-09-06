@@ -40,7 +40,6 @@ export const useVirtualized = ({
       : new MeasurementDynamic(listSize, new SizeEstimator(estimatedRowSize));
   });
 
-  console.log("measurement", measurement);
   const [measurementStore] = useState(() => {
     return new MeasurementStore(measurement, orientation, rowSize);
   });
