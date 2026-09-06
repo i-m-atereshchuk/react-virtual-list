@@ -9,7 +9,6 @@ import {
 import { MeasureRow } from "./MeasureRow";
 import { VirtualListSizer } from "./VirtualListSizer";
 
-// import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
 
 import { useVirtualized } from "../hooks/use-virtualized";
@@ -54,28 +53,6 @@ function VirtualListViewInner<T>(
     boxSizing: "border-box",
     position: "relative",
   };
-
-  // const {
-  //   // getOffset,
-  //   // totalSize,
-  //   // handleScroll,
-  //   // startIndex,
-  //   // endIndex,
-  //   // containerRef,
-  //   // observeRow,
-  //   // calculateRenderRange,
-  // } = useMeasurement({
-  //   listSize: list.length,
-  //   rowSize,
-  //   estimatedRowSize,
-  //   overscan,
-  //   viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
-  //   orientation,
-  //   onVisibleRangeChange,
-  //   remainingItemsThreshold,
-  //   onReachEnd,
-  //   onReachStart,
-  // });
 
   const {
     renderRange,
