@@ -1,8 +1,9 @@
 import { useState, useSyncExternalStore, useEffect } from "react";
 
-import { SizeEstimator } from "../core/SizeEstimator";
+// import { SizeEstimator } from "../core/SizeEstimator";
 import { MeasurementStatic } from "../core/MeasurementStatic";
-import { MeasurementDynamic } from "../core/MeasurementDynamic";
+// import { MeasurementDynamic } from "../core/MeasurementDynamic";
+import { MeasurementDynamicLazy } from "../core/MeasurementDynamicLazy";
 import { MeasurementStore } from "../core/MeasurementStore";
 import { CalculateRenderRange } from "../core/CalculateRenderRange";
 import { FrameScheduler } from "../core/FrameScheduler";
@@ -34,10 +35,20 @@ export const useVirtualized = ({
   onVisibleRangeChange,
   remainingItemsThreshold,
 }: UseVirtualizedOptions) => {
+  // const [measurement] = useState(() => {
+  //   return typeof rowSize === "number"
+  //     ? new MeasurementStatic(listSize, rowSize)
+  //     : new MeasurementDynamic(listSize, new SizeEstimator(estimatedRowSize));
+  // });
   const [measurement] = useState(() => {
     return typeof rowSize === "number"
       ? new MeasurementStatic(listSize, rowSize)
-      : new MeasurementDynamic(listSize, new SizeEstimator(estimatedRowSize));
+      : new MeasurementDynamicLazy(
+          listSize,
+          viewPortSize,
+          estimatedRowSize,
+          overscan,
+        );
   });
 
   const [measurementStore] = useState(() => {
