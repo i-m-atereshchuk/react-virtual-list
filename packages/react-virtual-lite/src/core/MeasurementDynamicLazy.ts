@@ -1,21 +1,34 @@
 import type { CalculationNode } from "../types/CalculationNode";
 import type { Measurement } from "../types/Measurement";
+
 import { TotalScrollSize } from "./TotalScrollSize";
 
 export class MeasurementDynamicLazy implements CalculationNode, Measurement {
   private listeners = new Set<() => void>();
+
   private pendingSizes = new Map<number, number>();
-  private maxPendingSizeIndex = -1;
+
+  private processingSizes = new Map<number, number>();
 
   private offsets: number[];
+
   private sizes: number[];
+
   private calculatedOffsets: number[];
+
   private total: TotalScrollSize;
-  private estimatedSize: number;
+
+  private readonly estimatedSize: number;
+
+  private readonly listSize: number;
+
+  private materializedTotal = 0;
+
   private lastMeasuredIndex = -1;
+
   private version = -1;
+
   private highestBit = 0;
-  private listSize: number;
 
   constructor(
     listSize: number,
@@ -25,77 +38,132 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
   ) {
     this.listSize = listSize;
     this.estimatedSize = estimatedSize;
+
     const endIndex = Math.min(
       Math.floor(viewPortSize / estimatedSize) + overscan,
       listSize - 1,
     );
 
-    const initListSize = endIndex + 2;
+    const initialLength = endIndex + 2;
 
-    this.sizes = new Array(initListSize).fill(estimatedSize);
+    this.sizes = new Array(initialLength).fill(estimatedSize);
     this.sizes[0] = 0;
-    this.offsets = new Array(initListSize).fill(0);
-    this.calculatedOffsets = new Array(initListSize).fill(0);
-    this.total = new TotalScrollSize(listSize * this.estimatedSize);
+
+    this.offsets = new Array(initialLength).fill(0);
+
+    this.calculatedOffsets = new Array(initialLength).fill(0);
+
+    this.total = new TotalScrollSize(listSize * estimatedSize);
+
+    this.materializedTotal = (initialLength - 1) * estimatedSize;
+
+    this.calculate = this.calculate.bind(this);
 
     this.initOffsets();
     this.updateHighestBit();
   }
 
   setRowSize(index: number, nextSize: number): boolean {
-    const nextIndex = index + 1;
-    this.maxPendingSizeIndex = Math.max(this.maxPendingSizeIndex, nextIndex);
-
-    const currentSize =
-      nextIndex < this.sizes.length ? this.sizes[nextIndex] : 0;
-
-    if (Math.abs(currentSize - nextSize) > 0.5) {
-      this.pendingSizes.set(nextIndex, nextSize);
-      this.notify();
-      return true;
+    if (
+      index < 0 ||
+      index >= this.listSize ||
+      nextSize < 0 ||
+      !Number.isFinite(nextSize)
+    ) {
+      return false;
     }
 
-    return false;
+    const treeIndex = index + 1;
+
+    const committedSize =
+      treeIndex < this.sizes.length
+        ? this.sizes[treeIndex]
+        : this.estimatedSize;
+
+    const currentSize = this.pendingSizes.get(treeIndex) ?? committedSize;
+
+    if (Math.abs(currentSize - nextSize) <= 0.5 && this.version > -1) {
+      return false;
+    }
+
+    if (Math.abs(committedSize - nextSize) <= 0.5) {
+      this.pendingSizes.delete(treeIndex);
+    } else {
+      this.pendingSizes.set(treeIndex, nextSize);
+    }
+
+    this.notify();
+
+    return true;
   }
 
   calculate(): void {
-    const processingSizes = this.pendingSizes;
-    const maxPendingSizeIndex = this.maxPendingSizeIndex;
-
-    this.maxPendingSizeIndex = -1;
-    this.pendingSizes = new Map();
-
-    this.prefill(maxPendingSizeIndex);
-
-    for (const [rowIndex, rowSize] of processingSizes) {
-      const prevSize = this.sizes[rowIndex];
-      const difference = rowSize - prevSize;
-      this.sizes[rowIndex] = rowSize;
-
-      this.add(rowIndex, difference);
-      this.total.updateTotal(prevSize, rowSize);
-      this.lastMeasuredIndex = Math.min(this.lastMeasuredIndex, rowIndex - 1);
+    if (this.pendingSizes.size === 0) {
+      return;
     }
+
+    const processingSizes = this.pendingSizes;
+
+    this.pendingSizes = this.processingSizes;
+    this.processingSizes = processingSizes;
+
+    this.pendingSizes.clear();
+
+    let maxIndex = -1;
+
+    for (const treeIndex of processingSizes.keys()) {
+      if (treeIndex > maxIndex) {
+        maxIndex = treeIndex;
+      }
+    }
+
+    if (maxIndex >= 0) {
+      this.prefill(maxIndex);
+    }
+
+    for (const [treeIndex, rowSize] of processingSizes) {
+      const prevSize = this.sizes[treeIndex];
+
+      const difference = rowSize - prevSize;
+
+      if (Math.abs(difference) <= 0.5) {
+        continue;
+      }
+
+      this.sizes[treeIndex] = rowSize;
+
+      this.add(treeIndex, difference);
+
+      this.total.updateTotal(prevSize, rowSize);
+
+      this.materializedTotal += difference;
+
+      this.lastMeasuredIndex = Math.min(this.lastMeasuredIndex, treeIndex - 1);
+    }
+
+    processingSizes.clear();
 
     this.nextVersion();
   }
 
-  findNearestIndex(offset: number) {
-    const lastCalculated = this.getOffset(this.offsets.length - 1);
-    const diff = offset - lastCalculated;
+  findNearestIndex(offset: number): number {
+    if (
+      offset > this.materializedTotal &&
+      this.offsets.length < this.listSize + 1
+    ) {
+      const difference = offset - this.materializedTotal;
 
-    if (diff > 0 && Math.floor(diff / this.estimatedSize) > 0) {
-      this.growTo(
-        Math.min(
-          this.offsets.length + Math.floor(diff / this.estimatedSize),
-          this.listSize + 1,
-        ),
-      );
+      const additionalRows = Math.floor(difference / this.estimatedSize);
+
+      if (additionalRows > 0) {
+        this.growTo(
+          Math.min(this.offsets.length + additionalRows, this.listSize + 1),
+        );
+      }
     }
 
     let index = 0;
     let sum = 0;
-
     let bit = this.highestBit;
 
     while (bit !== 0) {
@@ -112,32 +180,38 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
     return index;
   }
 
-  getOffset(index: number) {
-    if (index > this.lastMeasuredIndex) {
-      this.calculatedOffsets[index] = this.sum(index);
+  getOffset(index: number): number {
+    if (index <= this.lastMeasuredIndex) {
+      return this.calculatedOffsets[index];
     }
 
-    if (index - this.lastMeasuredIndex === 1) {
+    const offset = this.sum(index);
+
+    this.calculatedOffsets[index] = offset;
+
+    if (index === this.lastMeasuredIndex + 1) {
       this.lastMeasuredIndex = index;
     }
 
-    return this.calculatedOffsets[index];
+    return offset;
   }
 
-  getVersion() {
-    return this.version;
-  }
+  getSize(index: number): number {
+    const treeIndex = index + 1;
 
-  getSize(index: number) {
-    if (index + 1 > this.sizes.length - 1) {
+    if (treeIndex >= this.sizes.length) {
       return this.estimatedSize;
     }
 
-    return this.sizes[index + 1];
+    return this.sizes[treeIndex];
   }
 
-  getTotal() {
+  getTotal(): number {
     return this.total.getTotal();
+  }
+
+  getVersion(): number {
+    return this.version;
   }
 
   subscribe(callback: () => void): void {
@@ -148,77 +222,70 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
     this.listeners.delete(callback);
   }
 
-  private sum(index: number) {
-    this.growTo(index + 1);
-    let sum = 0;
-
+  private sum(index: number): number {
     this.prefill(index);
+
+    let sum = 0;
 
     while (index > 0) {
       sum += this.offsets[index];
-      index = index - (index & -index);
+
+      index -= index & -index;
     }
 
     return sum;
   }
 
-  private initOffsets() {
-    for (let i = 1; i < this.sizes.length; i++) {
-      this.offsets[i] += this.sizes[i];
-
-      const parent = i + (i & -i);
-
-      if (parent < this.offsets.length) {
-        this.offsets[parent] += this.offsets[i];
-      }
-    }
-  }
-
-  private updateHighestBit() {
-    let bit = 1;
-
-    while (bit << 1 < this.offsets.length) {
-      bit <<= 1;
-    }
-
-    this.highestBit = bit;
-  }
-
-  private prefill(index: number) {
-    if (this.sizes.length > index) {
+  private prefill(index: number): void {
+    if (index < this.sizes.length) {
       return;
     }
 
     this.growTo(index + 1);
   }
 
-  private growTo(newLength: number) {
+  private growTo(requiredLength: number): void {
     const oldLength = this.sizes.length;
 
-    if (newLength <= oldLength) {
+    if (requiredLength <= oldLength) {
       return;
     }
 
-    const estimatedSize = this.estimatedSize;
-    const addedCount = newLength - oldLength;
+    const maxLength = this.listSize + 1;
 
-    this.sizes = this.sizes.concat(new Array(addedCount).fill(estimatedSize));
-    this.offsets = this.offsets.concat(new Array(addedCount).fill(0));
-    this.calculatedOffsets = this.calculatedOffsets.concat(
-      new Array(addedCount).fill(0),
+    if (oldLength >= maxLength) {
+      return;
+    }
+
+    const growth = Math.max(64, Math.ceil(oldLength * 0.5));
+
+    const newLength = Math.min(
+      maxLength,
+      Math.max(requiredLength, oldLength + growth),
     );
 
-    let idx = oldLength - 1;
+    const addedCount = newLength - oldLength;
 
-    while (idx > 0) {
-      const lowbit = idx & -idx;
-      const parent = idx + lowbit;
+    this.sizes.length = newLength;
+    this.sizes.fill(this.estimatedSize, oldLength, newLength);
+
+    this.offsets.length = newLength;
+    this.offsets.fill(0, oldLength, newLength);
+
+    this.calculatedOffsets.length = newLength;
+    this.calculatedOffsets.fill(0, oldLength, newLength);
+
+    let index = oldLength - 1;
+
+    while (index > 0) {
+      const lowbit = index & -index;
+      const parent = index + lowbit;
 
       if (parent < newLength) {
-        this.offsets[parent] += this.offsets[idx];
+        this.offsets[parent] += this.offsets[index];
       }
 
-      idx -= lowbit;
+      index -= lowbit;
     }
 
     for (let i = oldLength; i < newLength; i++) {
@@ -231,18 +298,42 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
       }
     }
 
-    // this.total.updateTotal(0, addedCount * estimatedSize);
+    this.materializedTotal += addedCount * this.estimatedSize;
+
     this.updateHighestBit();
   }
 
-  private add(index: number, value: number) {
-    while (index < this.offsets.length) {
-      this.offsets[index] += value;
-      index = index + (index & -index);
+  private initOffsets(): void {
+    for (let i = 1; i < this.sizes.length; i++) {
+      this.offsets[i] += this.sizes[i];
+
+      const parent = i + (i & -i);
+
+      if (parent < this.offsets.length) {
+        this.offsets[parent] += this.offsets[i];
+      }
     }
   }
 
-  private nextVersion() {
+  private updateHighestBit(): void {
+    let bit = 1;
+
+    while (bit * 2 < this.offsets.length) {
+      bit *= 2;
+    }
+
+    this.highestBit = bit;
+  }
+
+  private add(index: number, value: number): void {
+    while (index < this.offsets.length) {
+      this.offsets[index] += value;
+
+      index += index & -index;
+    }
+  }
+
+  private nextVersion(): void {
     this.version += 1;
   }
 
