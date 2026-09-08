@@ -16,6 +16,8 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   private version = -1;
   private highestBit = 0;
 
+  private type = "dynamic";
+
   constructor(listSize: number, sizeEstimator: SizeEstimator) {
     this.sizeEstimator = sizeEstimator;
     this.sizes = new Array(listSize + 1).fill(

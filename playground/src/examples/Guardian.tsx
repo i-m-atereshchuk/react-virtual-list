@@ -39,7 +39,7 @@ export function Guardian() {
       </div>
       <div
         style={{
-          height: 350,
+          height: 700,
           width: "100%",
           border: "1px white solid",
         }}

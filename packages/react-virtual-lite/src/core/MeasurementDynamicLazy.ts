@@ -30,6 +30,8 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
 
   private highestBit = 0;
 
+  private type = "dynamicLazy";
+
   constructor(
     listSize: number,
     viewPortSize: number,
