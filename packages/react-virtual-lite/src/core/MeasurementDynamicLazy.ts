@@ -252,16 +252,11 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
     }
 
     const maxLength = this.listSize + 1;
-
-    if (oldLength >= maxLength) {
-      return;
-    }
-
     const growth = Math.max(64, Math.ceil(oldLength * 0.5));
 
-    const newLength = Math.min(
-      maxLength,
-      Math.max(requiredLength, oldLength + growth),
+    const newLength = Math.max(
+      requiredLength,
+      Math.min(maxLength, oldLength + growth),
     );
 
     const addedCount = newLength - oldLength;
@@ -296,6 +291,15 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
       if (parent < newLength) {
         this.offsets[parent] += this.offsets[i];
       }
+    }
+
+    const previousLogicalLength = Math.max(oldLength, maxLength);
+    const addedLogicalCount = Math.max(0, newLength - previousLogicalLength);
+
+    if (addedLogicalCount > 0) {
+      const difference = addedLogicalCount * this.estimatedSize;
+
+      this.total.updateTotal(0, difference);
     }
 
     this.materializedTotal += addedCount * this.estimatedSize;
