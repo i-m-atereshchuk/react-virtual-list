@@ -13,7 +13,7 @@ export async function getArticles(page: number) {
   const searchParams = new URLSearchParams({
     "api-key": apiKey,
     page: `${page}`,
-    "page-size": "20",
+    "page-size": "100",
     "order-by": "newest",
     "show-fields": "thumbnail,trailText",
   });

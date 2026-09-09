@@ -34,6 +34,7 @@ describe("CalculateRenderRange", () => {
       getTotal: vi.fn(() => total),
       findNearestIndex: vi.fn((offset: number) => Math.floor(offset / rowSize)),
       getVersion: vi.fn(() => version),
+      updateListSize: vi.fn(),
     };
   };
 

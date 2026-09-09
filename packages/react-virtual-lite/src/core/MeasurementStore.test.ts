@@ -44,6 +44,7 @@ describe("MeasurementStore", () => {
       getTotal: vi.fn(),
       findNearestIndex: vi.fn(),
       getVersion: vi.fn(),
+      updateListSize: vi.fn(),
     };
   };
 
