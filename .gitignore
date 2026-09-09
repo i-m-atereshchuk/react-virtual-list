@@ -13,3 +13,6 @@ playground/benchmark-results
 
 # Vitest reports and artifacts
 .vitest/
+
+# macOS
+.DS_Store
