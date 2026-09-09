@@ -20,7 +20,7 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
 
   private readonly estimatedSize: number;
 
-  private readonly listSize: number;
+  private listSize: number;
 
   private materializedTotal = 0;
 
@@ -293,15 +293,6 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
       }
     }
 
-    const previousLogicalLength = Math.max(oldLength, maxLength);
-    const addedLogicalCount = Math.max(0, newLength - previousLogicalLength);
-
-    if (addedLogicalCount > 0) {
-      const difference = addedLogicalCount * this.estimatedSize;
-
-      this.total.updateTotal(0, difference);
-    }
-
     this.materializedTotal += addedCount * this.estimatedSize;
 
     this.updateHighestBit();
@@ -345,5 +336,66 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
     for (const callback of this.listeners) {
       callback();
     }
+  }
+
+  updateListSize(nextListSize: number): void {
+    if (nextListSize === this.listSize) {
+      return;
+    }
+
+    if (nextListSize > this.listSize) {
+      const addedCount = nextListSize - this.listSize;
+
+      this.listSize = nextListSize;
+      this.total.updateTotal(0, addedCount * this.estimatedSize);
+      this.notify();
+      this.nextVersion();
+      return;
+    }
+
+    const oldListSize = this.listSize;
+    const oldSizesLength = this.sizes.length;
+    const newLength = nextListSize + 1;
+
+    for (const treeIndex of this.pendingSizes.keys()) {
+      if (treeIndex > nextListSize) {
+        this.pendingSizes.delete(treeIndex);
+      }
+    }
+
+    for (const treeIndex of this.processingSizes.keys()) {
+      if (treeIndex > nextListSize) {
+        this.processingSizes.delete(treeIndex);
+      }
+    }
+
+    let removedTotal = 0;
+
+    if (newLength < oldSizesLength) {
+      for (let i = newLength; i < oldSizesLength; i++) {
+        removedTotal += this.sizes[i];
+      }
+
+      this.materializedTotal -= removedTotal;
+
+      this.sizes.length = newLength;
+      this.offsets.length = newLength;
+      this.calculatedOffsets.length = newLength;
+
+      this.updateHighestBit();
+    }
+
+    const unmaterializedRemovedCount =
+      oldListSize - Math.max(nextListSize, oldSizesLength - 1);
+
+    removedTotal += unmaterializedRemovedCount * this.estimatedSize;
+
+    this.lastMeasuredIndex = Math.min(this.lastMeasuredIndex, nextListSize - 1);
+
+    this.listSize = nextListSize;
+    this.total.updateTotal(removedTotal, 0);
+
+    this.notify();
+    this.nextVersion();
   }
 }

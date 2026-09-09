@@ -5,15 +5,19 @@ import { useVirtualized } from "./use-virtualized";
 
 const mocks = vi.hoisted(() => {
   const measurementStatic = {
-    type: "static",
+    updateListSize: vi.fn(),
   };
 
   const measurementDynamic = {
-    type: "dynamic",
+    updateListSize: vi.fn(),
   };
 
   const measurementStore = {
     observeRow: vi.fn(),
+  };
+
+  const measurementDynamicLazy = {
+    updateListSize: vi.fn(),
   };
 
   const calculateRenderRange = {
@@ -40,6 +44,7 @@ const mocks = vi.hoisted(() => {
     measurementStatic,
     measurementDynamic,
     measurementStore,
+    measurementDynamicLazy,
     calculateRenderRange,
     frameScheduler,
 
@@ -72,6 +77,14 @@ vi.mock("../core/MeasurementDynamic", () => ({
   MeasurementDynamic: mocks.MeasurementDynamic.mockImplementation(function () {
     return mocks.measurementDynamic;
   }),
+}));
+
+vi.mock("../core/MeasurementDynamicLazy", () => ({
+  MeasurementDynamicLazy: mocks.MeasurementDynamic.mockImplementation(
+    function () {
+      return mocks.measurementDynamicLazy;
+    },
+  ),
 }));
 
 vi.mock("../core/MeasurementStore", () => ({

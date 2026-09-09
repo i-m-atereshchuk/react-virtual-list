@@ -57,4 +57,8 @@ export class MeasurementStatic implements Measurement, CalculationNode {
   getVersion() {
     return this.version;
   }
+
+  updateListSize(nextListSize: number): void {
+    this.listSize = nextListSize;
+  }
 }

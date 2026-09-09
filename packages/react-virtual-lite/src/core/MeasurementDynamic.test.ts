@@ -153,11 +153,11 @@ describe("MeasurementDynamic", () => {
       const { measurement } = createMeasurement();
 
       expect(measurement.getVersion()).toBe(-1);
-
+      measurement.setRowSize(0, 1);
       measurement.calculate();
 
       expect(measurement.getVersion()).toBe(0);
-
+      measurement.setRowSize(0, 12);
       measurement.calculate();
 
       expect(measurement.getVersion()).toBe(1);

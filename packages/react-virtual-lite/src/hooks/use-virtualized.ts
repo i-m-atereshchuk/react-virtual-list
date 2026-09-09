@@ -101,7 +101,11 @@ export const useVirtualized = ({
       onReachStart,
       onVisibleRangeChange,
     });
-  }, [onReachEnd, onReachEnd, onVisibleRangeChange]);
+  }, [onReachStart, onReachEnd, onVisibleRangeChange]);
+
+  useEffect(() => {
+    measurement.updateListSize(listSize);
+  }, [listSize]);
 
   useEffect(() => {
     frameScheduler.connect();

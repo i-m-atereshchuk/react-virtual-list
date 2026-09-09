@@ -5,4 +5,5 @@ export interface Measurement {
   getTotal(): number;
   findNearestIndex(offset: number): number;
   getVersion(): number;
+  updateListSize(nextListSize: number): void;
 }

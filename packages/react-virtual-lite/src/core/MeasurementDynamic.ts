@@ -6,7 +6,7 @@ import { TotalScrollSize } from "./TotalScrollSize";
 export class MeasurementDynamic implements CalculationNode, Measurement {
   private listeners = new Set<() => void>();
   private pendingSizes = new Map<number, number>();
-
+  private listSize: number;
   private offsets: number[];
   private sizes: number[];
   private calculatedOffsets: number[];
@@ -17,6 +17,7 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   private highestBit = 0;
 
   constructor(listSize: number, sizeEstimator: SizeEstimator) {
+    this.listSize = listSize;
     this.sizeEstimator = sizeEstimator;
     this.sizes = new Array(listSize + 1).fill(
       this.sizeEstimator.getEstimatedSize(),
@@ -68,7 +69,58 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
     return index;
   }
 
+  updateListSize(nextListSize: number): void {
+    if (nextListSize === this.listSize) {
+      return;
+    }
+
+    if (nextListSize > this.listSize) {
+      this.listSize = nextListSize;
+      this.growTo(nextListSize + 1);
+
+      this.notify();
+      this.nextVersion();
+      return;
+    }
+
+    const oldSizesLength = this.sizes.length;
+    const newLength = nextListSize + 1;
+
+    for (const treeIndex of this.pendingSizes.keys()) {
+      if (treeIndex > nextListSize) {
+        this.pendingSizes.delete(treeIndex);
+      }
+    }
+
+    if (newLength < oldSizesLength) {
+      let removedTotal = 0;
+
+      for (let i = newLength; i < oldSizesLength; i++) {
+        removedTotal += this.sizes[i];
+      }
+
+      this.sizes.length = newLength;
+      this.offsets.length = newLength;
+      this.calculatedOffsets.length = newLength;
+
+      this.updateHighestBit();
+
+      this.total.updateTotal(removedTotal, 0);
+    }
+
+    this.lastMeasuredIndex = Math.min(this.lastMeasuredIndex, nextListSize - 1);
+
+    this.listSize = nextListSize;
+
+    this.notify();
+    this.nextVersion();
+  }
+
   calculate(): void {
+    if (this.pendingSizes.size === 0) {
+      return;
+    }
+
     const processingSizes = this.pendingSizes;
 
     this.pendingSizes = new Map();
