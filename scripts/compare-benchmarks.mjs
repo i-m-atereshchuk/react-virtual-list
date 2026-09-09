@@ -24,6 +24,13 @@ const WARNING_THRESHOLD = 5;
 const FAILURE_THRESHOLD = 10;
 
 /*
+ * Below this absolute difference (in ms), a percentage change is
+ * ignored entirely -- e.g. an "Items build" of 0.40ms -> 0.50ms reads
+ * as +25% but is pure timer/measurement jitter, not a real change.
+ */
+const MIN_MS_DIFFERENCE_TO_FLAG = 2;
+
+/*
  * Every metric a scenario's result *might* have. Different scenario
  * types have different shapes (e.g. mount-cost-* has no worstFrame /
  * renderItemCalls / msPerScrollStep at all, and only *-scroll has
@@ -168,12 +175,45 @@ function formatInteger(value) {
   return String(Math.round(value));
 }
 
+/*
+ * p95 (and worst-frame/ms-per-step, which are effectively the same
+ * kind of tail measurement) swings 50%+ between two runs of
+ * *identical* code on shared GitHub-hosted runners -- a single slow
+ * page load drags the tail up or down while the median barely moves.
+ * Only p50 is stable enough to fail the build on; p95 stays visible
+ * in the report for awareness but never blocks CI.
+ */
 function isBlockingMetric(name) {
+  if (!name.endsWith("p50")) {
+    return false;
+  }
+
   return (
     name.startsWith("Duration") ||
     name.startsWith("Worst frame") ||
     name.startsWith("ms / scroll")
   );
+}
+
+function isMsMetric(name) {
+  return (
+    name.startsWith("Duration") ||
+    name.startsWith("Worst frame") ||
+    name.startsWith("ms / scroll") ||
+    name.startsWith("Items build")
+  );
+}
+
+function isNegligibleDifference(row) {
+  if (!isMsMetric(row.name)) {
+    return false;
+  }
+
+  if (row.baseValue === undefined || row.currentValue === undefined) {
+    return false;
+  }
+
+  return Math.abs(row.currentValue - row.baseValue) < MIN_MS_DIFFERENCE_TO_FLAG;
 }
 
 assertDirectory(baseDir, "Base");
@@ -222,6 +262,8 @@ for (const scenario of scenarios) {
     rows.push({
       scenario,
       name: metric.name,
+      baseValue,
+      currentValue,
       base: baseValue === undefined ? "N/A" : metric.format(baseValue),
       current: currentValue === undefined ? "N/A" : metric.format(currentValue),
       change,
@@ -246,7 +288,9 @@ for (const row of rows) {
     `| ${formatChange(row.change)} |\n`;
 }
 
-const comparableRows = rows.filter((row) => row.change !== null);
+const comparableRows = rows.filter(
+  (row) => row.change !== null && !isNegligibleDifference(row),
+);
 
 const regressions = comparableRows.filter(
   (row) => row.change >= WARNING_THRESHOLD,
