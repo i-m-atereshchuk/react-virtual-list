@@ -1,5 +1,7 @@
 import { useState, useSyncExternalStore, useEffect } from "react";
 
+import { getRenderRangeSize, shouldUseLazyMeasurement } from "../utils/lazy";
+
 import { SizeEstimator } from "../core/SizeEstimator";
 import { MeasurementStatic } from "../core/MeasurementStatic";
 import { MeasurementDynamic } from "../core/MeasurementDynamic";
@@ -40,15 +42,14 @@ export const useVirtualized = ({
       return new MeasurementStatic(listSize, rowSize);
     }
 
-    const renderRangeSize =
-      Math.min(
-        Math.floor(viewPortSize / estimatedRowSize) + overscan,
-        listSize - 1,
-      ) + 1;
+    const renderRangeSize = getRenderRangeSize(
+      listSize,
+      viewPortSize,
+      estimatedRowSize,
+      overscan,
+    );
 
-    const isLargeRest = listSize / renderRangeSize > 10;
-
-    if (isLargeRest) {
+    if (shouldUseLazyMeasurement(listSize, renderRangeSize)) {
       return new MeasurementDynamicLazy(
         listSize,
         viewPortSize,
