@@ -1,6 +1,9 @@
 import { VirtualList } from "react-virtual-lite";
 
-import { FIXED_ROW_SIZE, fixedItems } from "./data/fixed-items";
+import {
+  DYNAMIC_LAZY_ESTIMATED_ROW_SIZE,
+  dynamicLazyItems,
+} from "./data/dynamic-lazy-items";
 
 const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_WIDTH = 800;
@@ -14,7 +17,7 @@ window.__VIRTUAL_LIST_METRICS__ = {
   },
 };
 
-export function FixedBenchmark() {
+export function DynamicLazyBenchmark() {
   return (
     <div
       style={{
@@ -23,19 +26,18 @@ export function FixedBenchmark() {
       }}
     >
       <VirtualList
-        list={fixedItems}
-        rowSize={FIXED_ROW_SIZE}
+        list={dynamicLazyItems}
+        estimatedRowSize={DYNAMIC_LAZY_ESTIMATED_ROW_SIZE}
         overscan={OVERSCAN}
         keyExtractor={(item) => String(item.id)}
         renderItem={(item) => {
-          // Benchmark instrumentation intentionally records render calls.
           // eslint-disable-next-line react-hooks/immutability
           window.__VIRTUAL_LIST_METRICS__.renderItemCalls++;
 
           return (
             <div
               style={{
-                height: FIXED_ROW_SIZE,
+                height: item.height,
                 boxSizing: "border-box",
               }}
             >

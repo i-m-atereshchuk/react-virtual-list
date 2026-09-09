@@ -20,10 +20,41 @@ if (!baseDirArg || !currentDirArg) {
 const baseDir = path.resolve(baseDirArg);
 const currentDir = path.resolve(currentDirArg);
 
-const scenarios = ["fixed-50k-scroll", "dynamic-50k-warm", "dynamic-50k-cold"];
-
 const WARNING_THRESHOLD = 5;
 const FAILURE_THRESHOLD = 10;
+
+/*
+ * Every metric a scenario's result *might* have. Different scenario
+ * types have different shapes (e.g. mount-cost-* has no worstFrame /
+ * renderItemCalls / msPerScrollStep at all, and only *-scroll has
+ * scrollSteps), so a metric is only turned into a row when at least
+ * one of base/current actually has it -- see safeGet below.
+ */
+const METRIC_DEFINITIONS = [
+  { name: "Duration p50", path: ["duration", "p50"], format: formatMs },
+  { name: "Duration p95", path: ["duration", "p95"], format: formatMs },
+  { name: "Worst frame p95", path: ["worstFrame", "p95"], format: formatMs },
+  {
+    name: "Render calls p50",
+    path: ["renderItemCalls", "p50"],
+    format: formatInteger,
+  },
+  {
+    name: "ms / scroll step p50",
+    path: ["msPerScrollStep", "p50"],
+    format: formatMs,
+  },
+  {
+    name: "Items build p50",
+    path: ["itemsBuildDuration", "p50"],
+    format: formatMs,
+  },
+  {
+    name: "Duration excl. items build p50",
+    path: ["durationExcludingItemsBuild", "p50"],
+    format: formatMs,
+  },
+];
 
 function assertDirectory(directory, label) {
   if (!fs.existsSync(directory)) {
@@ -43,14 +74,30 @@ function assertDirectory(directory, label) {
   }
 }
 
+function listScenarios(directory) {
+  if (!fs.existsSync(directory)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(directory)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => file.slice(0, -".json".length));
+}
+
+/*
+ * Missing file or unreadable/corrupt JSON both resolve to `null`
+ * instead of crashing -- a scenario that only exists on one side
+ * (new benchmark not on main yet, or one removed) is expected, not
+ * an error. A parse failure is logged so it doesn't fail silently,
+ * but it still degrades to N/A rather than aborting the whole
+ * comparison.
+ */
 function readResult(directory, scenario) {
   const file = path.join(directory, `${scenario}.json`);
 
   if (!fs.existsSync(file)) {
-    console.error(`Benchmark result not found for "${scenario}":`);
-    console.error(file);
-
-    process.exit(1);
+    return null;
   }
 
   try {
@@ -59,8 +106,22 @@ function readResult(directory, scenario) {
     console.error(`Failed to read benchmark result "${file}":`);
     console.error(error);
 
-    process.exit(1);
+    return null;
   }
+}
+
+function safeGet(object, keyPath) {
+  let value = object;
+
+  for (const key of keyPath) {
+    if (value === null || typeof value !== "object") {
+      return undefined;
+    }
+
+    value = value[key];
+  }
+
+  return typeof value === "number" ? value : undefined;
 }
 
 function percentChange(base, current) {
@@ -80,6 +141,10 @@ function formatPercent(value) {
 }
 
 function formatChange(value) {
+  if (value === null) {
+    return "N/A";
+  }
+
   if (!Number.isFinite(value)) {
     return "🔴 +∞";
   }
@@ -119,56 +184,46 @@ console.log(`Base:    ${baseDir}`);
 console.log(`Current: ${currentDir}`);
 console.log("");
 
+const scenarios = Array.from(
+  new Set([...listScenarios(baseDir), ...listScenarios(currentDir)]),
+).sort();
+
+if (scenarios.length === 0) {
+  console.log("No benchmark results found in either directory.");
+
+  process.exit(0);
+}
+
 const rows = [];
 
 for (const scenario of scenarios) {
   const base = readResult(baseDir, scenario);
   const current = readResult(currentDir, scenario);
 
-  const metrics = [
-    {
-      name: "Duration p50",
-      base: base.duration.p50,
-      current: current.duration.p50,
-      format: formatMs,
-    },
-    {
-      name: "Duration p95",
-      base: base.duration.p95,
-      current: current.duration.p95,
-      format: formatMs,
-    },
-    {
-      name: "Worst frame p95",
-      base: base.worstFrame.p95,
-      current: current.worstFrame.p95,
-      format: formatMs,
-    },
-    {
-      name: "Render calls p50",
-      base: base.renderItemCalls.p50,
-      current: current.renderItemCalls.p50,
-      format: formatInteger,
-    },
-  ];
+  for (const metric of METRIC_DEFINITIONS) {
+    const baseValue = base ? safeGet(base, metric.path) : undefined;
+    const currentValue = current ? safeGet(current, metric.path) : undefined;
 
-  if (base.msPerScrollStep && current.msPerScrollStep) {
-    metrics.push({
-      name: "ms / scroll step p50",
-      base: base.msPerScrollStep.p50,
-      current: current.msPerScrollStep.p50,
-      format: formatMs,
-    });
-  }
+    /*
+     * Neither side has this metric for this scenario at all
+     * (e.g. "Worst frame p95" for a mount-cost-* scenario) --
+     * there is nothing meaningful to show, so skip the row
+     * entirely rather than printing "N/A | N/A | N/A".
+     */
+    if (baseValue === undefined && currentValue === undefined) {
+      continue;
+    }
 
-  for (const metric of metrics) {
-    const change = percentChange(metric.base, metric.current);
+    const change =
+      baseValue === undefined || currentValue === undefined
+        ? null
+        : percentChange(baseValue, currentValue);
 
     rows.push({
       scenario,
       name: metric.name,
-      base: metric.format(metric.base),
-      current: metric.format(metric.current),
+      base: baseValue === undefined ? "N/A" : metric.format(baseValue),
+      current: currentValue === undefined ? "N/A" : metric.format(currentValue),
       change,
     });
   }
@@ -191,13 +246,21 @@ for (const row of rows) {
     `| ${formatChange(row.change)} |\n`;
 }
 
-const regressions = rows.filter((row) => row.change >= WARNING_THRESHOLD);
+const comparableRows = rows.filter((row) => row.change !== null);
 
-const improvements = rows.filter((row) => row.change <= -WARNING_THRESHOLD);
+const regressions = comparableRows.filter(
+  (row) => row.change >= WARNING_THRESHOLD,
+);
 
-const blockingRegressions = rows.filter(
+const improvements = comparableRows.filter(
+  (row) => row.change <= -WARNING_THRESHOLD,
+);
+
+const blockingRegressions = comparableRows.filter(
   (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row.name),
 );
+
+const missingRows = rows.filter((row) => row.change === null);
 
 markdown += "\n";
 
@@ -220,6 +283,16 @@ if (improvements.length > 0) {
     markdown +=
       `- **${row.scenario} / ${row.name}**: ` +
       `${formatPercent(row.change)}\n`;
+  }
+}
+
+if (missingRows.length > 0) {
+  markdown += "\n## ℹ️ Only present on one side\n\n";
+
+  for (const row of missingRows) {
+    markdown +=
+      `- **${row.scenario} / ${row.name}**: ` +
+      `main=${row.base}, PR=${row.current}\n`;
   }
 }
 
