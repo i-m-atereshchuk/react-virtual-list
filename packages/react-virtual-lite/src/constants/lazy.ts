@@ -1,0 +1,1 @@
+export const LAZY_MEASUREMENT_SIZE_RATIO = 500;

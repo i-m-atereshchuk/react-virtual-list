@@ -1,16 +1,17 @@
 import { useState, useRef } from "react";
 import { VirtualList, type VirtualListRef } from "react-virtual-lite";
 
+const HORIZONTAL_WIDTH = 150;
+const VERTICAL_HEIGHT = 60;
 const data = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
-  width: Math.floor(Math.random() * 21) + 150, // від 40 до 60 включно
   height: 38,
+  width: HORIZONTAL_WIDTH,
 }));
 
 const dataVertical = Array.from({ length: 1000000 }, (_, index) => ({
   title: `Item ${index + 1}`,
-  height: Math.floor(Math.random() * 21) + 60, // від 40 до 60 включно
-  // height: 50,
+  height: VERTICAL_HEIGHT,
 }));
 
 const RowItem = ({
@@ -83,7 +84,7 @@ const RowItemVertical = ({
 
 let i = 40;
 
-function Playground() {
+function Static() {
   const verticalRef = useRef<VirtualListRef>(null);
 
   return (
@@ -109,6 +110,7 @@ function Playground() {
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={data}
           orientation="horizontal"
+          rowSize={HORIZONTAL_WIDTH}
           renderItem={(item) => {
             return (
               <RowItem
@@ -143,6 +145,7 @@ function Playground() {
           ref={verticalRef}
           keyExtractor={(item, index) => `${item.title}_${index}`}
           list={dataVertical}
+          rowSize={VERTICAL_HEIGHT}
           orientation="vertical"
           renderItem={(item, index) => {
             return (
@@ -174,4 +177,4 @@ function Playground() {
   );
 }
 
-export default Playground;
+export default Static;

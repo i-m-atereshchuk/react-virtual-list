@@ -10,3 +10,9 @@ playground/benchmark-results
 
 *.log
 *.tgz
+
+# Vitest reports and artifacts
+.vitest/
+
+# macOS
+.DS_Store

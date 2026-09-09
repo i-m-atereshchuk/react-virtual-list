@@ -3,13 +3,15 @@ import {
   type CSSProperties,
   type ReactNode,
   type Ref,
+  useRef,
 } from "react";
 
 import { MeasureRow } from "./MeasureRow";
 import { VirtualListSizer } from "./VirtualListSizer";
 
-import { useMeasurement } from "../hooks/use-measurement";
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
+
+import { useVirtualized } from "../hooks/use-virtualized";
 
 import { type SharedProps, type VirtualListRef } from "../types/List";
 
@@ -22,7 +24,7 @@ export interface VirtualListViewProps<T> extends SharedProps {
   keyExtractor: (item: T, index: number) => string;
 }
 
-function VirtualListViewInnet<T>(
+function VirtualListViewInner<T>(
   {
     viewPortHeight = 400,
     viewPortWidth = 400,
@@ -42,6 +44,8 @@ function VirtualListViewInnet<T>(
   }: VirtualListViewProps<T>,
   ref: Ref<VirtualListRef>,
 ) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const style: CSSProperties = {
     height: viewPortHeight,
     width: viewPortWidth,
@@ -51,25 +55,24 @@ function VirtualListViewInnet<T>(
   };
 
   const {
+    renderRange,
+    observeRow,
     getOffset,
     totalSize,
     handleScroll,
     startIndex,
     endIndex,
-    containerRef,
-    observeRow,
-    calculateRenderRange,
-  } = useMeasurement({
-    listSize: list.length,
+  } = useVirtualized({
     rowSize,
+    listSize: list.length,
     estimatedRowSize,
-    overscan,
-    viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
     orientation,
-    onVisibleRangeChange,
-    remainingItemsThreshold,
+    viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
+    overscan,
     onReachEnd,
     onReachStart,
+    onVisibleRangeChange,
+    remainingItemsThreshold,
   });
 
   useVirtualListHandle({
@@ -78,7 +81,7 @@ function VirtualListViewInnet<T>(
     orientation,
     listSize: list.length,
     totalSize,
-    calculateRenderRange,
+    calculateRenderRange: renderRange,
   });
 
   const children: ReactNode[] = [];
@@ -123,6 +126,6 @@ function VirtualListViewInnet<T>(
   );
 }
 
-export const VirtualListView = forwardRef(VirtualListViewInnet) as <T>(
+export const VirtualListView = forwardRef(VirtualListViewInner) as <T>(
   props: VirtualListViewProps<T> & { ref?: Ref<VirtualListRef> },
 ) => ReactNode;
