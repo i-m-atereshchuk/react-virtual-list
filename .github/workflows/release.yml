@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # Required for npm trusted publishing (OIDC) -- without this the
+  # workflow has no id-token to exchange, and publish falls back to
+  # (or conflicts with) classic token auth.
+  id-token: write
 
 jobs:
   release:
@@ -31,6 +35,10 @@ jobs:
 
       - run: pnpm build
 
+      # Trusted publishing requires npm >= 11.5.1; the version bundled
+      # with the Node setup above isn't guaranteed to be new enough.
+      - run: npm install -g npm@latest
+
       - name: Create Release PR or Publish
         uses: changesets/action@v1
         with:
@@ -38,4 +46,7 @@ jobs:
           publish: pnpm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # No NPM_TOKEN: publishing now goes through npm trusted
+          # publishing (OIDC). changesets/action writes a classic
+          # authToken .npmrc whenever NPM_TOKEN is set, which
+          # preempts the OIDC exchange -- so it must stay unset here.
