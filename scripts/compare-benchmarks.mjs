@@ -183,7 +183,7 @@ function formatInteger(value) {
  * Only p50 is stable enough to fail the build on; p95 stays visible
  * in the report for awareness but never blocks CI.
  */
-function isBlockingMetric(name) {
+function isTimingMetric(name) {
   if (!name.endsWith("p50")) {
     return false;
   }
@@ -193,6 +193,45 @@ function isBlockingMetric(name) {
     name.startsWith("Worst frame") ||
     name.startsWith("ms / scroll")
   );
+}
+
+function isMountCostScenario(scenario) {
+  return scenario.startsWith("mount-cost-");
+}
+
+/*
+ * mount-cost-* scenarios build their fixture list (Array.from over up
+ * to 1,000,000 rows) synchronously inside the measured window -- the
+ * single heaviest, most CPU-contention-sensitive step in the whole
+ * suite, and it swings well past normal noise on shared runners even
+ * with zero code changes (observed: Duration p95 +24%, Items build
+ * p50 +12%, on a PR that only touched package.json/CHANGELOG.md).
+ * "Duration excl. items build p50" exists specifically to subtract
+ * that phase back out; it's the only metric from these scenarios
+ * stable enough to gate on. The raw metrics stay visible in the
+ * table for diagnosis, just with a much wider noise allowance so
+ * they stop showing up as false "Regressions".
+ */
+const MOUNT_COST_ISOLATED_METRIC = "Duration excl. items build p50";
+const MOUNT_COST_WARNING_THRESHOLD = 30;
+
+function getWarningThreshold(row) {
+  if (
+    isMountCostScenario(row.scenario) &&
+    row.name !== MOUNT_COST_ISOLATED_METRIC
+  ) {
+    return MOUNT_COST_WARNING_THRESHOLD;
+  }
+
+  return WARNING_THRESHOLD;
+}
+
+function isBlockingMetric(row) {
+  if (isMountCostScenario(row.scenario)) {
+    return row.name === MOUNT_COST_ISOLATED_METRIC;
+  }
+
+  return isTimingMetric(row.name);
 }
 
 function isMsMetric(name) {
@@ -293,15 +332,15 @@ const comparableRows = rows.filter(
 );
 
 const regressions = comparableRows.filter(
-  (row) => row.change >= WARNING_THRESHOLD,
+  (row) => row.change >= getWarningThreshold(row),
 );
 
 const improvements = comparableRows.filter(
-  (row) => row.change <= -WARNING_THRESHOLD,
+  (row) => row.change <= -getWarningThreshold(row),
 );
 
 const blockingRegressions = comparableRows.filter(
-  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row.name),
+  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row),
 );
 
 const missingRows = rows.filter((row) => row.change === null);
@@ -344,7 +383,10 @@ markdown += "\n---\n\n";
 
 markdown +=
   `Regression warning threshold: **+${WARNING_THRESHOLD}%**  \n` +
-  `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.\n`;
+  `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.  \n` +
+  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** gates CI; ` +
+  `its other metrics (dominated by fixture-build noise) use a ` +
+  `**+${MOUNT_COST_WARNING_THRESHOLD}%** warning threshold and never block.\n`;
 
 console.log(markdown);
 
