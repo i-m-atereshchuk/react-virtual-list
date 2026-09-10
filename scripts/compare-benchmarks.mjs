@@ -24,6 +24,13 @@ const WARNING_THRESHOLD = 5;
 const FAILURE_THRESHOLD = 10;
 
 /*
+ * Below this absolute difference (in ms), a percentage change is
+ * ignored entirely -- e.g. an "Items build" of 0.40ms -> 0.50ms reads
+ * as +25% but is pure timer/measurement jitter, not a real change.
+ */
+const MIN_MS_DIFFERENCE_TO_FLAG = 2;
+
+/*
  * Every metric a scenario's result *might* have. Different scenario
  * types have different shapes (e.g. mount-cost-* has no worstFrame /
  * renderItemCalls / msPerScrollStep at all, and only *-scroll has
@@ -47,6 +54,16 @@ const METRIC_DEFINITIONS = [
   {
     name: "Items build p50",
     path: ["itemsBuildDuration", "p50"],
+    format: formatMs,
+  },
+  {
+    // Directly measured via performance.mark/measure around the
+    // component's own render-to-commit window (see use-mount-mark.ts)
+    // -- network, bundle-parse, and fixture-build time are excluded
+    // by construction, not subtracted after the fact. This is the
+    // real signal for mount-cost-* scenarios.
+    name: "App mount p50",
+    path: ["appMountDuration", "p50"],
     format: formatMs,
   },
   {
@@ -168,12 +185,86 @@ function formatInteger(value) {
   return String(Math.round(value));
 }
 
-function isBlockingMetric(name) {
+/*
+ * p95 (and worst-frame/ms-per-step, which are effectively the same
+ * kind of tail measurement) swings 50%+ between two runs of
+ * *identical* code on shared GitHub-hosted runners -- a single slow
+ * page load drags the tail up or down while the median barely moves.
+ * Only p50 is stable enough to fail the build on; p95 stays visible
+ * in the report for awareness but never blocks CI.
+ */
+function isTimingMetric(name) {
+  if (!name.endsWith("p50")) {
+    return false;
+  }
+
   return (
     name.startsWith("Duration") ||
     name.startsWith("Worst frame") ||
     name.startsWith("ms / scroll")
   );
+}
+
+function isMountCostScenario(scenario) {
+  return scenario.startsWith("mount-cost-");
+}
+
+/*
+ * mount-cost-* scenarios build their fixture list (Array.from over up
+ * to 1,000,000 rows) synchronously inside the measured window -- the
+ * single heaviest, most CPU-contention-sensitive step in the whole
+ * suite, and it swings well past normal noise on shared runners even
+ * with zero code changes (observed: Duration p95 +24%, Items build
+ * p50 +12%, on a PR that only touched package.json/CHANGELOG.md).
+ * "App mount p50" is measured directly (performance.mark/measure
+ * around just the component's render-to-commit window -- see
+ * use-mount-mark.ts) with network, bundle-parse, and fixture-build
+ * time excluded by construction, so it's the only metric from these
+ * scenarios stable enough to gate on. The raw metrics stay visible in
+ * the table for diagnosis, just with a much wider noise allowance so
+ * they stop showing up as false "Regressions".
+ */
+const MOUNT_COST_ISOLATED_METRIC = "App mount p50";
+const MOUNT_COST_WARNING_THRESHOLD = 30;
+
+function getWarningThreshold(row) {
+  if (
+    isMountCostScenario(row.scenario) &&
+    row.name !== MOUNT_COST_ISOLATED_METRIC
+  ) {
+    return MOUNT_COST_WARNING_THRESHOLD;
+  }
+
+  return WARNING_THRESHOLD;
+}
+
+function isBlockingMetric(row) {
+  if (isMountCostScenario(row.scenario)) {
+    return row.name === MOUNT_COST_ISOLATED_METRIC;
+  }
+
+  return isTimingMetric(row.name);
+}
+
+function isMsMetric(name) {
+  return (
+    name.startsWith("Duration") ||
+    name.startsWith("Worst frame") ||
+    name.startsWith("ms / scroll") ||
+    name.startsWith("Items build")
+  );
+}
+
+function isNegligibleDifference(row) {
+  if (!isMsMetric(row.name)) {
+    return false;
+  }
+
+  if (row.baseValue === undefined || row.currentValue === undefined) {
+    return false;
+  }
+
+  return Math.abs(row.currentValue - row.baseValue) < MIN_MS_DIFFERENCE_TO_FLAG;
 }
 
 assertDirectory(baseDir, "Base");
@@ -222,6 +313,8 @@ for (const scenario of scenarios) {
     rows.push({
       scenario,
       name: metric.name,
+      baseValue,
+      currentValue,
       base: baseValue === undefined ? "N/A" : metric.format(baseValue),
       current: currentValue === undefined ? "N/A" : metric.format(currentValue),
       change,
@@ -246,18 +339,20 @@ for (const row of rows) {
     `| ${formatChange(row.change)} |\n`;
 }
 
-const comparableRows = rows.filter((row) => row.change !== null);
+const comparableRows = rows.filter(
+  (row) => row.change !== null && !isNegligibleDifference(row),
+);
 
 const regressions = comparableRows.filter(
-  (row) => row.change >= WARNING_THRESHOLD,
+  (row) => row.change >= getWarningThreshold(row),
 );
 
 const improvements = comparableRows.filter(
-  (row) => row.change <= -WARNING_THRESHOLD,
+  (row) => row.change <= -getWarningThreshold(row),
 );
 
 const blockingRegressions = comparableRows.filter(
-  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row.name),
+  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row),
 );
 
 const missingRows = rows.filter((row) => row.change === null);
@@ -271,6 +366,20 @@ if (regressions.length > 0) {
     markdown +=
       `- **${row.scenario} / ${row.name}**: ` +
       `+${formatPercent(row.change)}\n`;
+
+    /*
+     * A non-blocking regression (p95 noise, or a mount-cost metric
+     * outside the isolated one) still shouldn't be invisible unless
+     * someone thinks to open the job summary -- emit it as a GitHub
+     * Actions annotation so it shows up as a warning directly on the
+     * PR's Checks / Files changed UI even though it doesn't fail CI.
+     */
+    if (!isBlockingMetric(row) || row.change < FAILURE_THRESHOLD) {
+      console.log(
+        `::warning::${row.scenario} / ${row.name}: main=${row.base}, ` +
+          `PR=${row.current}, change=+${formatPercent(row.change)}`,
+      );
+    }
   }
 } else {
   markdown += "## ✅ No significant regressions\n\n";
@@ -300,7 +409,10 @@ markdown += "\n---\n\n";
 
 markdown +=
   `Regression warning threshold: **+${WARNING_THRESHOLD}%**  \n` +
-  `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.\n`;
+  `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.  \n` +
+  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** gates CI; ` +
+  `its other metrics (dominated by fixture-build noise) use a ` +
+  `**+${MOUNT_COST_WARNING_THRESHOLD}%** warning threshold and never block.\n`;
 
 console.log(markdown);
 
