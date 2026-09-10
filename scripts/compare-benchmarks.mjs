@@ -366,6 +366,20 @@ if (regressions.length > 0) {
     markdown +=
       `- **${row.scenario} / ${row.name}**: ` +
       `+${formatPercent(row.change)}\n`;
+
+    /*
+     * A non-blocking regression (p95 noise, or a mount-cost metric
+     * outside the isolated one) still shouldn't be invisible unless
+     * someone thinks to open the job summary -- emit it as a GitHub
+     * Actions annotation so it shows up as a warning directly on the
+     * PR's Checks / Files changed UI even though it doesn't fail CI.
+     */
+    if (!isBlockingMetric(row) || row.change < FAILURE_THRESHOLD) {
+      console.log(
+        `::warning::${row.scenario} / ${row.name}: main=${row.base}, ` +
+          `PR=${row.current}, change=+${formatPercent(row.change)}`,
+      );
+    }
   }
 } else {
   markdown += "## ✅ No significant regressions\n\n";
