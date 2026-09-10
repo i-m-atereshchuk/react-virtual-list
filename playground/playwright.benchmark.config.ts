@@ -21,6 +21,16 @@ export default defineConfig({
     trace: "off",
     screenshot: "off",
     video: "off",
+
+    launchOptions: {
+      args: [
+        // Exposes window.gc() so mount-cost.spec.ts can force a
+        // collection before each measured window, instead of leaving
+        // it to chance whether a background GC pause lands inside
+        // the window for some runs but not others.
+        "--js-flags=--expose-gc",
+      ],
+    },
   },
 
   webServer: {

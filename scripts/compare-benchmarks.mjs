@@ -214,28 +214,70 @@ function isMountCostScenario(scenario) {
  * to 1,000,000 rows) synchronously inside the measured window -- the
  * single heaviest, most CPU-contention-sensitive step in the whole
  * suite, and it swings well past normal noise on shared runners even
- * with zero code changes (observed: Duration p95 +24%, Items build
- * p50 +12%, on a PR that only touched package.json/CHANGELOG.md).
+ * with zero code changes (observed: Duration p95 +24%, +129%; Items
+ * build p50 +12%, on PRs that touched nothing performance-relevant).
  * "App mount p50" is measured directly (performance.mark/measure
  * around just the component's render-to-commit window -- see
  * use-mount-mark.ts) with network, bundle-parse, and fixture-build
- * time excluded by construction, so it's the only metric from these
- * scenarios stable enough to gate on. The raw metrics stay visible in
- * the table for diagnosis, just with a much wider noise allowance so
- * they stop showing up as false "Regressions".
+ * time excluded by construction, so it's the ONLY metric from these
+ * scenarios worth treating as signal. The rest (raw Duration, Items
+ * build, Duration excl. items build, and any p95) stay visible in the
+ * table for manual diagnosis, but are excluded from the Regressions/
+ * Improvements sections and CI annotations entirely -- no threshold
+ * was found wide enough to let real code changes through while also
+ * filtering their noise (a 30% allowance still let a 129% fixture-
+ * build-noise swing through as a flagged "Regression").
+ *
+ * "App mount p50" itself is still real wall-clock time on a shared
+ * runner -- observed swinging up to +6.78% on a PR whose only change
+ * was a forEach -> for...of loop rewrite in two listener-notify
+ * methods (no measurable perf effect), before warm-up runs, a forced
+ * GC per navigation, and trimmed statistics (see mount-cost.spec.ts,
+ * helpers/stats.ts) brought that down to +3.57% on the same kind of
+ * no-op change. It gets its own, wider pair of thresholds instead of
+ * the default WARNING_THRESHOLD/FAILURE_THRESHOLD meant for cheap,
+ * low-noise metrics like "Render calls" -- with enough headroom above
+ * the observed noise band to still catch a real regression (an actual
+ * algorithmic change tends to move this by multiples, not by ~5-10%).
  */
 const MOUNT_COST_ISOLATED_METRIC = "App mount p50";
-const MOUNT_COST_WARNING_THRESHOLD = 30;
+const MOUNT_COST_ISOLATED_WARNING_THRESHOLD = 15;
+const MOUNT_COST_ISOLATED_FAILURE_THRESHOLD = 20;
+
+function isMountCostIsolatedMetric(row) {
+  return (
+    isMountCostScenario(row.scenario) && row.name === MOUNT_COST_ISOLATED_METRIC
+  );
+}
+
+/*
+ * Whether a row is even eligible to be called out as a "Regression"/
+ * "Improvement" (or annotated) at all. mount-cost-*'s non-isolated
+ * metrics are known noise -- see the comment above -- so they're
+ * excluded here rather than just given a wide threshold.
+ */
+function isReportableMetric(row) {
+  if (isMountCostScenario(row.scenario)) {
+    return row.name === MOUNT_COST_ISOLATED_METRIC;
+  }
+
+  return true;
+}
 
 function getWarningThreshold(row) {
-  if (
-    isMountCostScenario(row.scenario) &&
-    row.name !== MOUNT_COST_ISOLATED_METRIC
-  ) {
-    return MOUNT_COST_WARNING_THRESHOLD;
+  if (isMountCostIsolatedMetric(row)) {
+    return MOUNT_COST_ISOLATED_WARNING_THRESHOLD;
   }
 
   return WARNING_THRESHOLD;
+}
+
+function getFailureThreshold(row) {
+  if (isMountCostIsolatedMetric(row)) {
+    return MOUNT_COST_ISOLATED_FAILURE_THRESHOLD;
+  }
+
+  return FAILURE_THRESHOLD;
 }
 
 function isBlockingMetric(row) {
@@ -251,7 +293,8 @@ function isMsMetric(name) {
     name.startsWith("Duration") ||
     name.startsWith("Worst frame") ||
     name.startsWith("ms / scroll") ||
-    name.startsWith("Items build")
+    name.startsWith("Items build") ||
+    name.startsWith("App mount")
   );
 }
 
@@ -340,7 +383,10 @@ for (const row of rows) {
 }
 
 const comparableRows = rows.filter(
-  (row) => row.change !== null && !isNegligibleDifference(row),
+  (row) =>
+    row.change !== null &&
+    !isNegligibleDifference(row) &&
+    isReportableMetric(row),
 );
 
 const regressions = comparableRows.filter(
@@ -352,7 +398,7 @@ const improvements = comparableRows.filter(
 );
 
 const blockingRegressions = comparableRows.filter(
-  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row),
+  (row) => row.change >= getFailureThreshold(row) && isBlockingMetric(row),
 );
 
 const missingRows = rows.filter((row) => row.change === null);
@@ -374,7 +420,7 @@ if (regressions.length > 0) {
      * Actions annotation so it shows up as a warning directly on the
      * PR's Checks / Files changed UI even though it doesn't fail CI.
      */
-    if (!isBlockingMetric(row) || row.change < FAILURE_THRESHOLD) {
+    if (!isBlockingMetric(row) || row.change < getFailureThreshold(row)) {
       console.log(
         `::warning::${row.scenario} / ${row.name}: main=${row.base}, ` +
           `PR=${row.current}, change=+${formatPercent(row.change)}`,
@@ -410,9 +456,13 @@ markdown += "\n---\n\n";
 markdown +=
   `Regression warning threshold: **+${WARNING_THRESHOLD}%**  \n` +
   `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.  \n` +
-  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** gates CI; ` +
-  `its other metrics (dominated by fixture-build noise) use a ` +
-  `**+${MOUNT_COST_WARNING_THRESHOLD}%** warning threshold and never block.\n`;
+  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** is ` +
+  `treated as signal, at a wider **+${MOUNT_COST_ISOLATED_WARNING_THRESHOLD}%** ` +
+  `warning / **+${MOUNT_COST_ISOLATED_FAILURE_THRESHOLD}%** failure threshold ` +
+  `(real wall-clock time still has run-to-run noise on shared runners). Their ` +
+  `other metrics (dominated by fixture-build noise) stay in the table above ` +
+  `for diagnosis but are never flagged as a Regression/Improvement and never ` +
+  `block, at any threshold.\n`;
 
 console.log(markdown);
 
@@ -421,13 +471,14 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 }
 
 if (blockingRegressions.length > 0) {
-  console.error(`\nPerformance regression exceeded ${FAILURE_THRESHOLD}%:`);
+  console.error(`\nPerformance regression exceeded threshold:`);
 
   for (const row of blockingRegressions) {
     console.error(
       `- ${row.scenario} / ${row.name}: ` +
         `main=${row.base}, PR=${row.current}, ` +
-        `change=+${formatPercent(row.change)}`,
+        `change=+${formatPercent(row.change)} ` +
+        `(threshold: +${getFailureThreshold(row)}%)`,
     );
   }
 

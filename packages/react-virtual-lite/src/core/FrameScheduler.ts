@@ -58,7 +58,10 @@ export class FrameScheduler {
 
   private commit() {
     this.version += 1;
-    this.listeners.forEach((listener) => listener());
+
+    for (const callback of this.listeners) {
+      callback();
+    }
   }
 
   subscribe(listener: () => void) {

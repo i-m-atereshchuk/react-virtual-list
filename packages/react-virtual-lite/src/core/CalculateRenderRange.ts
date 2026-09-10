@@ -285,6 +285,8 @@ export class CalculateRenderRange implements CalculationNode {
   }
 
   private notify() {
-    this.listeners.forEach((callback) => callback());
+    for (const callback of this.listeners) {
+      callback();
+    }
   }
 }
