@@ -1,10 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-import { percentile } from "./helpers/stats.ts";
+import { summarize } from "./helpers/stats.ts";
 import { saveBenchmarkResult } from "./helpers/save-result.ts";
 
 const IS_CI = Boolean(process.env.CI);
-const RUNS = IS_CI ? 15 : 30;
+const RUNS = IS_CI ? 25 : 30;
+
+/*
+ * The very first page.goto() to a URL in a fresh browser context pays for
+ * an empty V8 bytecode cache -- Chromium only starts serving cached
+ * bytecode for a script once it's seen that exact resource before in this
+ * context. That makes run #1 systematically slower than the rest, for
+ * reasons that have nothing to do with the code under test. A few
+ * untimed warm-up loads prime that cache before any recorded run starts.
+ */
+const WARMUP_RUNS = 3;
 
 /*
  * Measures pure "time to first visible virtualized row" -- no
@@ -40,6 +50,27 @@ const scenarios = [
 
 for (const { benchmark, label } of scenarios) {
   test(`mount cost: ${label}`, async ({ page }) => {
+    /*
+     * Forces a GC pass as early as possible on every fresh document,
+     * before any app code runs -- so a collection that would otherwise
+     * land at a random point during a later run's measured window
+     * (courtesy of Chromium potentially reusing the renderer process,
+     * and its heap, across same-origin navigations) is much less likely
+     * to happen there instead. Requires --js-flags=--expose-gc, set in
+     * playwright.benchmark.config.ts; window.gc is undefined otherwise,
+     * so this is a silent no-op outside that config.
+     */
+    await page.addInitScript(() => {
+      const globalWithGc = window as typeof window & { gc?: () => void };
+
+      globalWithGc.gc?.();
+    });
+
+    for (let warmup = 0; warmup < WARMUP_RUNS; warmup++) {
+      await page.goto(`/?benchmark=${benchmark}`);
+      await expect(page.getByTestId("react-virtual-lite")).toBeVisible();
+    }
+
     const durations: number[] = [];
     const itemsBuildDurations: number[] = [];
     const appMountDurations: number[] = [];
@@ -90,41 +121,21 @@ for (const { benchmark, label } of scenarios) {
       config: {
         benchmark,
         runs: RUNS,
+        warmupRuns: WARMUP_RUNS,
       },
 
-      duration: {
-        p50: percentile(durations, 50),
-        p95: percentile(durations, 95),
-        min: Math.min(...durations),
-        max: Math.max(...durations),
-      },
-
-      itemsBuildDuration: {
-        p50: percentile(itemsBuildDurations, 50),
-        p95: percentile(itemsBuildDurations, 95),
-        min: Math.min(...itemsBuildDurations),
-        max: Math.max(...itemsBuildDurations),
-      },
+      duration: summarize(durations),
+      itemsBuildDuration: summarize(itemsBuildDurations),
 
       // Directly measured (not inferred) React-mount +
       // measurement-class-construction time -- the primary signal.
-      appMountDuration: {
-        p50: percentile(appMountDurations, 50),
-        p95: percentile(appMountDurations, 95),
-        min: Math.min(...appMountDurations),
-        max: Math.max(...appMountDurations),
-      },
+      appMountDuration: summarize(appMountDurations),
 
       // Kept for cross-checking against appMountDuration: duration
       // with fixture-list construction subtracted back out. Still
       // includes network/bundle-parse noise that appMountDuration
       // excludes by construction.
-      durationExcludingItemsBuild: {
-        p50: percentile(excludingItemsBuildDurations, 50),
-        p95: percentile(excludingItemsBuildDurations, 95),
-        min: Math.min(...excludingItemsBuildDurations),
-        max: Math.max(...excludingItemsBuildDurations),
-      },
+      durationExcludingItemsBuild: summarize(excludingItemsBuildDurations),
     };
 
     console.log(`\n${result.scenario} result:`);
