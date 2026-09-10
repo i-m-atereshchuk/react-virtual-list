@@ -1,6 +1,13 @@
 import type { CalculationNode } from "../types/CalculationNode";
 import type { Measurement } from "../types/Measurement";
 
+import {
+  fenwickAdd,
+  fenwickFindByPrefixSum,
+  fenwickHighestBit,
+  fenwickRebuildRange,
+  fenwickSum,
+} from "./FenwickTree";
 import { TotalScrollSize } from "./TotalScrollSize";
 
 export class MeasurementDynamicLazy implements CalculationNode, Measurement {
@@ -162,22 +169,7 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
       }
     }
 
-    let index = 0;
-    let sum = 0;
-    let bit = this.highestBit;
-
-    while (bit !== 0) {
-      const next = index + bit;
-
-      if (next < this.offsets.length && sum + this.offsets[next] <= offset) {
-        sum += this.offsets[next];
-        index = next;
-      }
-
-      bit >>= 1;
-    }
-
-    return index;
+    return fenwickFindByPrefixSum(this.offsets, this.highestBit, offset);
   }
 
   getOffset(index: number): number {
@@ -225,15 +217,7 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
   private sum(index: number): number {
     this.prefill(index);
 
-    let sum = 0;
-
-    while (index > 0) {
-      sum += this.offsets[index];
-
-      index -= index & -index;
-    }
-
-    return sum;
+    return fenwickSum(this.offsets, index);
   }
 
   private prefill(index: number): void {
@@ -270,28 +254,7 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
     this.calculatedOffsets.length = newLength;
     this.calculatedOffsets.fill(0, oldLength, newLength);
 
-    let index = oldLength - 1;
-
-    while (index > 0) {
-      const lowbit = index & -index;
-      const parent = index + lowbit;
-
-      if (parent < newLength) {
-        this.offsets[parent] += this.offsets[index];
-      }
-
-      index -= lowbit;
-    }
-
-    for (let i = oldLength; i < newLength; i++) {
-      this.offsets[i] += this.sizes[i];
-
-      const parent = i + (i & -i);
-
-      if (parent < newLength) {
-        this.offsets[parent] += this.offsets[i];
-      }
-    }
+    fenwickRebuildRange(this.offsets, this.sizes, oldLength, newLength);
 
     this.materializedTotal += addedCount * this.estimatedSize;
 
@@ -299,33 +262,15 @@ export class MeasurementDynamicLazy implements CalculationNode, Measurement {
   }
 
   private initOffsets(): void {
-    for (let i = 1; i < this.sizes.length; i++) {
-      this.offsets[i] += this.sizes[i];
-
-      const parent = i + (i & -i);
-
-      if (parent < this.offsets.length) {
-        this.offsets[parent] += this.offsets[i];
-      }
-    }
+    fenwickRebuildRange(this.offsets, this.sizes, 1, this.sizes.length);
   }
 
   private updateHighestBit(): void {
-    let bit = 1;
-
-    while (bit * 2 < this.offsets.length) {
-      bit *= 2;
-    }
-
-    this.highestBit = bit;
+    this.highestBit = fenwickHighestBit(this.offsets.length);
   }
 
   private add(index: number, value: number): void {
-    while (index < this.offsets.length) {
-      this.offsets[index] += value;
-
-      index += index & -index;
-    }
+    fenwickAdd(this.offsets, index, value);
   }
 
   private nextVersion(): void {

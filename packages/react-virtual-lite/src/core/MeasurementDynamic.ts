@@ -1,5 +1,12 @@
 import type { CalculationNode } from "../types/CalculationNode";
 import type { Measurement } from "../types/Measurement";
+import {
+  fenwickAdd,
+  fenwickFindByPrefixSum,
+  fenwickHighestBit,
+  fenwickRebuildRange,
+  fenwickSum,
+} from "./FenwickTree";
 import { SizeEstimator } from "./SizeEstimator";
 import { TotalScrollSize } from "./TotalScrollSize";
 
@@ -50,23 +57,7 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
   }
 
   findNearestIndex(offset: number) {
-    let index = 0;
-    let sum = 0;
-
-    let bit = this.highestBit;
-
-    while (bit !== 0) {
-      const next = index + bit;
-
-      if (next < this.offsets.length && sum + this.offsets[next] <= offset) {
-        sum += this.offsets[next];
-        index = next;
-      }
-
-      bit >>= 1;
-    }
-
-    return index;
+    return fenwickFindByPrefixSum(this.offsets, this.highestBit, offset);
   }
 
   updateListSize(nextListSize: number): void {
@@ -210,72 +201,27 @@ export class MeasurementDynamic implements CalculationNode, Measurement {
       new Array(addedCount).fill(0),
     );
 
-    let idx = oldLength - 1;
-
-    while (idx > 0) {
-      const lowbit = idx & -idx;
-      const parent = idx + lowbit;
-
-      if (parent < newLength) {
-        this.offsets[parent] += this.offsets[idx];
-      }
-
-      idx -= lowbit;
-    }
-
-    for (let i = oldLength; i < newLength; i++) {
-      this.offsets[i] += this.sizes[i];
-
-      const parent = i + (i & -i);
-
-      if (parent < newLength) {
-        this.offsets[parent] += this.offsets[i];
-      }
-    }
+    fenwickRebuildRange(this.offsets, this.sizes, oldLength, newLength);
 
     this.total.updateTotal(0, addedCount * estimatedSize);
     this.updateHighestBit();
   }
 
   private sum(index: number) {
-    let sum = 0;
-
     this.prefill(index);
 
-    while (index > 0) {
-      sum += this.offsets[index];
-      index = index - (index & -index);
-    }
-
-    return sum;
+    return fenwickSum(this.offsets, index);
   }
 
   private initOffsets() {
-    for (let i = 1; i < this.sizes.length; i++) {
-      this.offsets[i] += this.sizes[i];
-
-      const parent = i + (i & -i);
-
-      if (parent < this.offsets.length) {
-        this.offsets[parent] += this.offsets[i];
-      }
-    }
+    fenwickRebuildRange(this.offsets, this.sizes, 1, this.sizes.length);
   }
 
   private updateHighestBit() {
-    let bit = 1;
-
-    while (bit << 1 < this.offsets.length) {
-      bit <<= 1;
-    }
-
-    this.highestBit = bit;
+    this.highestBit = fenwickHighestBit(this.offsets.length);
   }
 
   private add(index: number, value: number) {
-    while (index < this.offsets.length) {
-      this.offsets[index] += value;
-      index = index + (index & -index);
-    }
+    fenwickAdd(this.offsets, index, value);
   }
 }
