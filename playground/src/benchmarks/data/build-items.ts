@@ -26,7 +26,7 @@ export function buildItems<T>(
   const items = Array.from({ length: count }, (_, index) => mapper(index));
 
   performance.mark(endMark);
-  performance.measure(scenario, startMark, endMark);
+  performance.measure(`${scenario}:items-build`, startMark, endMark);
 
   return items;
 }

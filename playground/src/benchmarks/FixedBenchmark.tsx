@@ -1,6 +1,7 @@
 import { VirtualList } from "react-virtual-lite";
 
 import { FIXED_ROW_SIZE, fixedItems } from "./data/fixed-items";
+import { useMountMark } from "./use-mount-mark";
 
 const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_WIDTH = 800;
@@ -15,6 +16,8 @@ window.__VIRTUAL_LIST_METRICS__ = {
 };
 
 export function FixedBenchmark() {
+  useMountMark("fixed");
+
   return (
     <div
       style={{

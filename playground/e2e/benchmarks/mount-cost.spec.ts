@@ -14,16 +14,22 @@ const RUNS = IS_CI ? 15 : 30;
  * dominated by measurement construction -- O(listSize) for
  * MeasurementDynamic vs O(viewport) for MeasurementDynamicLazy.
  *
- * Building the fixture list itself (Array.from over listSize) is NOT
- * free -- at 1,000,000 rows it costs far more than the measurement
- * classes' own construction-time difference, so it would otherwise
- * swamp the signal this benchmark exists to isolate. Each
- * `data/*-items.ts` file brackets its own Array.from call with a
- * performance.measure(benchmark) (see build-items.ts); we read that
- * back here and report both the raw end-to-end duration and the
- * duration with fixture construction subtracted out. The latter is
- * the number that actually reflects the measurement class, and is
- * the one to watch when sanity-checking LAZY_MEASUREMENT_SIZE_RATIO.
+ * `duration` (raw goto -> visible) mixes in network/bundle-parse time
+ * and, worse, Array.from()-ing the fixture list -- at 1,000,000 rows
+ * that alone costs far more than the measurement classes' own
+ * construction-time difference, so it would swamp the signal this
+ * benchmark exists to isolate. Rather than *inferring* the real cost
+ * by subtracting fixture-build time back out of the wall clock, each
+ * benchmark component directly brackets its own mount with
+ * performance.mark/measure via useMountMark() (see use-mount-mark.ts):
+ * the start mark is taken at the top of the component's render body
+ * (after its module -- and the fixture data it imports -- already
+ * finished loading), and the end mark fires from a layout effect on
+ * first commit. That `${benchmark}:app-mount` measure is a *direct*
+ * reading of React-mount + measurement-class-construction time, with
+ * network and fixture-build already excluded by construction rather
+ * than subtracted after the fact. It's the number to watch when
+ * sanity-checking LAZY_MEASUREMENT_SIZE_RATIO.
  */
 const scenarios = [
   { benchmark: "fixed", label: "fixed-50k" },
@@ -36,6 +42,7 @@ for (const { benchmark, label } of scenarios) {
   test(`mount cost: ${label}`, async ({ page }) => {
     const durations: number[] = [];
     const itemsBuildDurations: number[] = [];
+    const appMountDurations: number[] = [];
     const excludingItemsBuildDurations: number[] = [];
 
     for (let run = 0; run < RUNS; run++) {
@@ -49,14 +56,22 @@ for (const { benchmark, label } of scenarios) {
 
       const duration = Date.now() - start;
 
-      const itemsBuildMs = await page.evaluate((measureName) => {
-        const entries = performance.getEntriesByName(measureName, "measure");
+      const { itemsBuildMs, appMountMs } = await page.evaluate((name) => {
+        const read = (measureName: string) => {
+          const entries = performance.getEntriesByName(measureName, "measure");
 
-        return entries.length > 0 ? entries[entries.length - 1].duration : 0;
+          return entries.length > 0 ? entries[entries.length - 1].duration : 0;
+        };
+
+        return {
+          itemsBuildMs: read(`${name}:items-build`),
+          appMountMs: read(`${name}:app-mount`),
+        };
       }, benchmark);
 
       durations.push(duration);
       itemsBuildDurations.push(itemsBuildMs);
+      appMountDurations.push(appMountMs);
       excludingItemsBuildDurations.push(Math.max(0, duration - itemsBuildMs));
 
       console.log(
@@ -64,7 +79,7 @@ for (const { benchmark, label } of scenarios) {
           `${label} ${run + 1}/${RUNS}`,
           `duration=${duration}ms`,
           `itemsBuild=${itemsBuildMs.toFixed(2)}ms`,
-          `excludingItemsBuild=${(duration - itemsBuildMs).toFixed(2)}ms`,
+          `appMount=${appMountMs.toFixed(2)}ms`,
         ].join(" | "),
       );
     }
@@ -91,8 +106,19 @@ for (const { benchmark, label } of scenarios) {
         max: Math.max(...itemsBuildDurations),
       },
 
-      // duration with the fixture-list construction subtracted out --
-      // the number that actually reflects measurement class overhead.
+      // Directly measured (not inferred) React-mount +
+      // measurement-class-construction time -- the primary signal.
+      appMountDuration: {
+        p50: percentile(appMountDurations, 50),
+        p95: percentile(appMountDurations, 95),
+        min: Math.min(...appMountDurations),
+        max: Math.max(...appMountDurations),
+      },
+
+      // Kept for cross-checking against appMountDuration: duration
+      // with fixture-list construction subtracted back out. Still
+      // includes network/bundle-parse noise that appMountDuration
+      // excludes by construction.
       durationExcludingItemsBuild: {
         p50: percentile(excludingItemsBuildDurations, 50),
         p95: percentile(excludingItemsBuildDurations, 95),

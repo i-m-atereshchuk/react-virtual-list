@@ -57,6 +57,16 @@ const METRIC_DEFINITIONS = [
     format: formatMs,
   },
   {
+    // Directly measured via performance.mark/measure around the
+    // component's own render-to-commit window (see use-mount-mark.ts)
+    // -- network, bundle-parse, and fixture-build time are excluded
+    // by construction, not subtracted after the fact. This is the
+    // real signal for mount-cost-* scenarios.
+    name: "App mount p50",
+    path: ["appMountDuration", "p50"],
+    format: formatMs,
+  },
+  {
     name: "Duration excl. items build p50",
     path: ["durationExcludingItemsBuild", "p50"],
     format: formatMs,
@@ -206,13 +216,15 @@ function isMountCostScenario(scenario) {
  * suite, and it swings well past normal noise on shared runners even
  * with zero code changes (observed: Duration p95 +24%, Items build
  * p50 +12%, on a PR that only touched package.json/CHANGELOG.md).
- * "Duration excl. items build p50" exists specifically to subtract
- * that phase back out; it's the only metric from these scenarios
- * stable enough to gate on. The raw metrics stay visible in the
- * table for diagnosis, just with a much wider noise allowance so
+ * "App mount p50" is measured directly (performance.mark/measure
+ * around just the component's render-to-commit window -- see
+ * use-mount-mark.ts) with network, bundle-parse, and fixture-build
+ * time excluded by construction, so it's the only metric from these
+ * scenarios stable enough to gate on. The raw metrics stay visible in
+ * the table for diagnosis, just with a much wider noise allowance so
  * they stop showing up as false "Regressions".
  */
-const MOUNT_COST_ISOLATED_METRIC = "Duration excl. items build p50";
+const MOUNT_COST_ISOLATED_METRIC = "App mount p50";
 const MOUNT_COST_WARNING_THRESHOLD = 30;
 
 function getWarningThreshold(row) {

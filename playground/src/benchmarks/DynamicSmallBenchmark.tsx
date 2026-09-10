@@ -4,6 +4,7 @@ import {
   DYNAMIC_SMALL_ESTIMATED_ROW_SIZE,
   dynamicSmallItems,
 } from "./data/dynamic-small-items";
+import { useMountMark } from "./use-mount-mark";
 
 const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_WIDTH = 800;
@@ -18,6 +19,8 @@ window.__VIRTUAL_LIST_METRICS__ = {
 };
 
 export function DynamicSmallBenchmark() {
+  useMountMark("dynamic-small");
+
   return (
     <div
       style={{

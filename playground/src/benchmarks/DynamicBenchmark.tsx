@@ -1,6 +1,7 @@
 import { VirtualList } from "react-virtual-lite";
 
 import { DYNAMIC_ESTIMATED_ROW_SIZE, dynamicItems } from "./data/dynamic-items";
+import { useMountMark } from "./use-mount-mark";
 
 const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_WIDTH = 800;
@@ -15,6 +16,8 @@ window.__VIRTUAL_LIST_METRICS__ = {
 };
 
 export function DynamicBenchmark() {
+  useMountMark("dynamic");
+
   return (
     <div
       style={{

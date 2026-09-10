@@ -4,6 +4,7 @@ import {
   DYNAMIC_LAZY_ESTIMATED_ROW_SIZE,
   dynamicLazyItems,
 } from "./data/dynamic-lazy-items";
+import { useMountMark } from "./use-mount-mark";
 
 const VIEWPORT_HEIGHT = 600;
 const VIEWPORT_WIDTH = 800;
@@ -18,6 +19,8 @@ window.__VIRTUAL_LIST_METRICS__ = {
 };
 
 export function DynamicLazyBenchmark() {
+  useMountMark("dynamic-lazy");
+
   return (
     <div
       style={{
