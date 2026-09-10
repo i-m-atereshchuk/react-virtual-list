@@ -219,23 +219,50 @@ function isMountCostScenario(scenario) {
  * "App mount p50" is measured directly (performance.mark/measure
  * around just the component's render-to-commit window -- see
  * use-mount-mark.ts) with network, bundle-parse, and fixture-build
- * time excluded by construction, so it's the only metric from these
- * scenarios stable enough to gate on. The raw metrics stay visible in
- * the table for diagnosis, just with a much wider noise allowance so
- * they stop showing up as false "Regressions".
+ * time excluded by construction, so it's the metric from these
+ * scenarios that's actually worth gating on. The raw metrics stay
+ * visible in the table for diagnosis, just with a much wider noise
+ * allowance so they stop showing up as false "Regressions".
+ *
+ * "App mount p50" itself is still real wall-clock time on a shared
+ * runner -- observed swinging +0.29% / +0.68% / +6.78% across three
+ * scenarios on a PR whose only change was a forEach -> for...of loop
+ * rewrite in two listener-notify methods (no measurable perf effect).
+ * It gets its own, wider pair of thresholds instead of the default
+ * WARNING_THRESHOLD/FAILURE_THRESHOLD meant for cheap, low-noise
+ * metrics like "Render calls" -- with enough headroom above that
+ * observed noise band to still catch a real regression (an actual
+ * algorithmic change tends to move this by multiples, not by ~5-10%).
  */
 const MOUNT_COST_ISOLATED_METRIC = "App mount p50";
 const MOUNT_COST_WARNING_THRESHOLD = 30;
+const MOUNT_COST_ISOLATED_WARNING_THRESHOLD = 15;
+const MOUNT_COST_ISOLATED_FAILURE_THRESHOLD = 20;
+
+function isMountCostIsolatedMetric(row) {
+  return (
+    isMountCostScenario(row.scenario) && row.name === MOUNT_COST_ISOLATED_METRIC
+  );
+}
 
 function getWarningThreshold(row) {
-  if (
-    isMountCostScenario(row.scenario) &&
-    row.name !== MOUNT_COST_ISOLATED_METRIC
-  ) {
+  if (isMountCostIsolatedMetric(row)) {
+    return MOUNT_COST_ISOLATED_WARNING_THRESHOLD;
+  }
+
+  if (isMountCostScenario(row.scenario)) {
     return MOUNT_COST_WARNING_THRESHOLD;
   }
 
   return WARNING_THRESHOLD;
+}
+
+function getFailureThreshold(row) {
+  if (isMountCostIsolatedMetric(row)) {
+    return MOUNT_COST_ISOLATED_FAILURE_THRESHOLD;
+  }
+
+  return FAILURE_THRESHOLD;
 }
 
 function isBlockingMetric(row) {
@@ -251,7 +278,8 @@ function isMsMetric(name) {
     name.startsWith("Duration") ||
     name.startsWith("Worst frame") ||
     name.startsWith("ms / scroll") ||
-    name.startsWith("Items build")
+    name.startsWith("Items build") ||
+    name.startsWith("App mount")
   );
 }
 
@@ -352,7 +380,7 @@ const improvements = comparableRows.filter(
 );
 
 const blockingRegressions = comparableRows.filter(
-  (row) => row.change >= FAILURE_THRESHOLD && isBlockingMetric(row),
+  (row) => row.change >= getFailureThreshold(row) && isBlockingMetric(row),
 );
 
 const missingRows = rows.filter((row) => row.change === null);
@@ -374,7 +402,7 @@ if (regressions.length > 0) {
      * Actions annotation so it shows up as a warning directly on the
      * PR's Checks / Files changed UI even though it doesn't fail CI.
      */
-    if (!isBlockingMetric(row) || row.change < FAILURE_THRESHOLD) {
+    if (!isBlockingMetric(row) || row.change < getFailureThreshold(row)) {
       console.log(
         `::warning::${row.scenario} / ${row.name}: main=${row.base}, ` +
           `PR=${row.current}, change=+${formatPercent(row.change)}`,
@@ -410,8 +438,11 @@ markdown += "\n---\n\n";
 markdown +=
   `Regression warning threshold: **+${WARNING_THRESHOLD}%**  \n` +
   `CI failure threshold: **+${FAILURE_THRESHOLD}%** for timing metrics.  \n` +
-  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** gates CI; ` +
-  `its other metrics (dominated by fixture-build noise) use a ` +
+  `\`mount-cost-*\` scenarios: only **${MOUNT_COST_ISOLATED_METRIC}** gates CI, ` +
+  `at a wider **+${MOUNT_COST_ISOLATED_WARNING_THRESHOLD}%** warning / ` +
+  `**+${MOUNT_COST_ISOLATED_FAILURE_THRESHOLD}%** failure threshold (real ` +
+  `wall-clock time still has run-to-run noise on shared runners); its other ` +
+  `metrics (dominated by fixture-build noise) use a ` +
   `**+${MOUNT_COST_WARNING_THRESHOLD}%** warning threshold and never block.\n`;
 
 console.log(markdown);
@@ -421,13 +452,14 @@ if (process.env.GITHUB_STEP_SUMMARY) {
 }
 
 if (blockingRegressions.length > 0) {
-  console.error(`\nPerformance regression exceeded ${FAILURE_THRESHOLD}%:`);
+  console.error(`\nPerformance regression exceeded threshold:`);
 
   for (const row of blockingRegressions) {
     console.error(
       `- ${row.scenario} / ${row.name}: ` +
         `main=${row.base}, PR=${row.current}, ` +
-        `change=+${formatPercent(row.change)}`,
+        `change=+${formatPercent(row.change)} ` +
+        `(threshold: +${getFailureThreshold(row)}%)`,
     );
   }
 
