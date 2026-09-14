@@ -88,7 +88,7 @@ export const useVirtualized = ({
   useSyncExternalStore(frameScheduler.subscribe, frameScheduler.getVersion);
 
   useEffect(() => {
-    calculateRenderRange.uppdateProperties({
+    calculateRenderRange.updateProperties({
       viewPortSize,
       overscan,
       listSize,

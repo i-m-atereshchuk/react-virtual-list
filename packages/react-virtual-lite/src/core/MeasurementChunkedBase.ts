@@ -48,6 +48,7 @@ export abstract class MeasurementChunkedBase
     this.total = new TotalScrollSize(0);
 
     this.calculate = this.calculate.bind(this);
+    this.getSize = this.getSize.bind(this);
   }
 
   abstract calculate(): void;

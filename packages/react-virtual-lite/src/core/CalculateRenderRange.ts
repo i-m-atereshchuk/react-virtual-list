@@ -42,8 +42,6 @@ export class CalculateRenderRange
   private pendingScroll = 0;
   private realScrollTop = 0;
 
-  // private listeners = new Set<() => void>();
-
   private visibleStartIndex = -1;
   private visibleEndIndex = -1;
 
@@ -146,7 +144,7 @@ export class CalculateRenderRange
     return this.scroll + relativeOffset;
   }
 
-  uppdateProperties({
+  updateProperties({
     viewPortSize,
     overscan,
     listSize,

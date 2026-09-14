@@ -411,7 +411,7 @@ describe("CalculateRenderRange", () => {
 
       calculateRenderRange.subscribe(listener);
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 300,
         overscan: 1,
         listSize: 10,
@@ -428,7 +428,7 @@ describe("CalculateRenderRange", () => {
 
       calculateRenderRange.subscribe(listener);
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 200,
         overscan: 2,
         listSize: 10,
@@ -445,7 +445,7 @@ describe("CalculateRenderRange", () => {
 
       calculateRenderRange.subscribe(listener);
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 200,
         overscan: 1,
         listSize: 20,
@@ -462,7 +462,7 @@ describe("CalculateRenderRange", () => {
 
       calculateRenderRange.subscribe(listener);
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 200,
         overscan: 1,
         listSize: 10,
@@ -479,7 +479,7 @@ describe("CalculateRenderRange", () => {
 
       calculateRenderRange.subscribe(listener);
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 200,
         overscan: 1,
         listSize: 10,
@@ -492,7 +492,7 @@ describe("CalculateRenderRange", () => {
     it("recalculates after layout properties change", () => {
       const calculateRenderRange = createCalculateRenderRange();
 
-      calculateRenderRange.uppdateProperties({
+      calculateRenderRange.updateProperties({
         viewPortSize: 300,
         overscan: 2,
         listSize: 10,
