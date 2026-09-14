@@ -8,6 +8,11 @@ playground/node_modules
 playground/dist
 playground/benchmark-results
 
+# Copied from the root README by react-virtual-lite's "prepack" script
+# (scripts/copy-readme.mjs) right before packing/publishing -- generated,
+# not a second source of truth.
+packages/react-virtual-lite/README.md
+
 *.log
 *.tgz
 
