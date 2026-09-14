@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useCallback,
   useMemo,
   useRef,
   type CSSProperties,
@@ -91,19 +90,6 @@ function VirtualListViewInner<T>(
     calculateRenderRange: renderRange,
   });
 
-  const handleContainerScroll = useCallback(
-    (event: UIEvent<HTMLDivElement>) => {
-      const target = event.currentTarget;
-
-      handleScroll(
-        orientation === "horizontal" ? target.scrollLeft : target.scrollTop,
-      );
-
-      onScroll?.(event);
-    },
-    [handleScroll, onScroll, orientation],
-  );
-
   const children: ReactNode[] = [];
 
   for (let index = startIndex; index < endIndex; index++) {
@@ -134,7 +120,15 @@ function VirtualListViewInner<T>(
       data-react-virtual-list="list"
       role="list"
       aria-busy={isLoading}
-      onScroll={handleContainerScroll}
+      onScroll={(event: UIEvent<HTMLDivElement>) => {
+        const target = event.currentTarget;
+
+        handleScroll(
+          orientation === "horizontal" ? target.scrollLeft : target.scrollTop,
+        );
+
+        onScroll?.(event);
+      }}
     >
       {children}
 
