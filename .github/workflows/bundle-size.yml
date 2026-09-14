@@ -1,0 +1,97 @@
+name: Bundle Size
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bundle-size-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  bundle-size:
+    name: Bundle size vs main
+
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    steps:
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+
+      - name: Checkout PR
+        uses: actions/checkout@v6
+        with:
+          path: pr
+
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          path: main
+
+      # ------------------------------------------------------------
+      # Setup
+      # ------------------------------------------------------------
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            pr/pnpm-lock.yaml
+            main/pnpm-lock.yaml
+
+      # ------------------------------------------------------------
+      # main
+      # ------------------------------------------------------------
+
+      - name: Install main dependencies
+        working-directory: main
+        run: pnpm install --frozen-lockfile
+
+      - name: Build main library
+        working-directory: main
+        run: pnpm build:lib
+
+      # ------------------------------------------------------------
+      # PR
+      # ------------------------------------------------------------
+
+      - name: Install PR dependencies
+        working-directory: pr
+        run: pnpm install --frozen-lockfile
+
+      - name: Build PR library
+        working-directory: pr
+        run: pnpm build:lib
+
+      # ------------------------------------------------------------
+      # Compare
+      #
+      # scripts/
+      #   compare-bundle-size.mjs
+      #
+      # packages/react-virtual-lite/
+      #   dist/
+      # ------------------------------------------------------------
+
+      - name: Compare bundle size
+        working-directory: pr
+        run: |
+          node scripts/compare-bundle-size.mjs \
+            ../main/packages/react-virtual-lite/dist \
+            packages/react-virtual-lite/dist

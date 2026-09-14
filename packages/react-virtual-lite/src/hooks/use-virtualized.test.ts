@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => {
   };
 
   const calculateRenderRange = {
-    uppdateProperties: vi.fn(),
+    updateProperties: vi.fn(),
     uppdateCallbacks: vi.fn(),
 
     getSafeRange: vi.fn(() => 1000),
@@ -224,7 +224,7 @@ describe("useVirtualized", () => {
   it("updates CalculateRenderRange properties on mount", () => {
     renderHook(() => useVirtualized(defaultProps));
 
-    expect(mocks.calculateRenderRange.uppdateProperties).toHaveBeenCalledWith({
+    expect(mocks.calculateRenderRange.updateProperties).toHaveBeenCalledWith({
       viewPortSize: defaultProps.viewPortSize,
       overscan: defaultProps.overscan,
       listSize: defaultProps.listSize,
@@ -247,7 +247,7 @@ describe("useVirtualized", () => {
       initialProps: defaultProps,
     });
 
-    mocks.calculateRenderRange.uppdateProperties.mockClear();
+    mocks.calculateRenderRange.updateProperties.mockClear();
 
     const nextProps = {
       ...defaultProps,
@@ -259,11 +259,11 @@ describe("useVirtualized", () => {
 
     rerender(nextProps);
 
-    expect(mocks.calculateRenderRange.uppdateProperties).toHaveBeenCalledTimes(
+    expect(mocks.calculateRenderRange.updateProperties).toHaveBeenCalledTimes(
       1,
     );
 
-    expect(mocks.calculateRenderRange.uppdateProperties).toHaveBeenCalledWith({
+    expect(mocks.calculateRenderRange.updateProperties).toHaveBeenCalledWith({
       viewPortSize: 800,
       overscan: 4,
       listSize: 200,

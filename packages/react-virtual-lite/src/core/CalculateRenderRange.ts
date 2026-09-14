@@ -5,6 +5,7 @@ import type { Measurement } from "../types/Measurement";
 import { MAX_SAFE_SCROLL_RANGE } from "../constants/scroll";
 import { nativeScrollToVirtual } from "../utils/native-scroll-to-virtual";
 import { virtualScrollToNative } from "../utils/virtual-scroll-to-native";
+import { ObservableBase } from "./ObservableBase";
 
 type UppdateProperties = {
   viewPortSize: number;
@@ -32,13 +33,14 @@ type InitCalculateRenderRange = {
     ((startIndex: number, endIndex: number) => void) | undefined;
 };
 
-export class CalculateRenderRange implements CalculationNode {
+export class CalculateRenderRange
+  extends ObservableBase
+  implements CalculationNode
+{
   private prevScroll = 0;
   private scroll = -1;
   private pendingScroll = 0;
   private realScrollTop = 0;
-
-  private listeners = new Set<() => void>();
 
   private visibleStartIndex = -1;
   private visibleEndIndex = -1;
@@ -71,6 +73,8 @@ export class CalculateRenderRange implements CalculationNode {
     onVisibleRangeChange,
     remainingItemsThreshold,
   }: InitCalculateRenderRange) {
+    super();
+
     this.measurement = measurement;
     this.measurementVersion = measurement.getVersion();
     this.viewPortSize = viewPortSize;
@@ -140,15 +144,7 @@ export class CalculateRenderRange implements CalculationNode {
     return this.scroll + relativeOffset;
   }
 
-  subscribe(callback: () => void): void {
-    this.listeners.add(callback);
-  }
-
-  unsubscribe(callback: () => void): void {
-    this.listeners.delete(callback);
-  }
-
-  uppdateProperties({
+  updateProperties({
     viewPortSize,
     overscan,
     listSize,
@@ -282,11 +278,5 @@ export class CalculateRenderRange implements CalculationNode {
       changed,
       visibleChanged,
     };
-  }
-
-  private notify() {
-    for (const callback of this.listeners) {
-      callback();
-    }
   }
 }

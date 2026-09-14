@@ -1,72 +1,89 @@
 import {
-  useState,
-  useRef,
-  useLayoutEffect,
   forwardRef,
-  type Ref,
+  useLayoutEffect,
+  useRef,
+  useState,
   type CSSProperties,
   type ReactNode,
+  type Ref,
 } from "react";
 
-import { type SharedProps, type VirtualListRef } from "../types/List";
-
+import type { SharedProps, VirtualListRef } from "../types/List";
 import { VirtualListView } from "./VirtualListView";
 
 export interface VirtualListProps<T> extends SharedProps {
   list: T[];
-  viewPortHeight?: number;
-  viewPortWidth?: number;
   renderItem: (item: T, index: number) => ReactNode;
   keyExtractor: (item: T, index: number) => string;
 }
 
-const VirtualListInner = <T,>(
+const containerStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+};
+
+type Size = {
+  width: number;
+  height: number;
+};
+
+function VirtualListInner<T>(
   props: VirtualListProps<T>,
   ref: Ref<VirtualListRef>,
-) => {
-  const divRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({
+) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [size, setSize] = useState<Size>({
     width: 0,
     height: 0,
   });
 
-  const style: CSSProperties = {
-    width: "100%",
-    height: "100%",
-  };
-
   useLayoutEffect(() => {
-    if (!divRef.current) {
+    const element = containerRef.current;
+
+    if (!element) {
       return;
     }
 
     const observer = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return;
+      }
+
       const { width, height } = entry.contentRect;
 
-      setSize({ width, height });
+      setSize((prev) => {
+        if (prev.width === width && prev.height === height) {
+          return prev;
+        }
+
+        return { width, height };
+      });
     });
 
-    observer.observe(divRef.current);
+    observer.observe(element);
 
     return () => observer.disconnect();
   }, []);
 
-  const isReady = size.height > 0 && size.width > 0 && props.list.length > 0;
+  const isReady = size.width > 0 && size.height > 0 && props.list.length > 0;
 
   return (
-    <div ref={divRef} style={style} role="none">
+    <div ref={containerRef} style={containerStyle} role="none">
       {isReady && (
         <VirtualListView
           {...props}
           ref={ref}
-          viewPortHeight={size.height}
           viewPortWidth={size.width}
+          viewPortHeight={size.height}
         />
       )}
     </div>
   );
-};
+}
 
 export const VirtualList = forwardRef(VirtualListInner) as <T>(
-  props: VirtualListProps<T> & { ref?: Ref<VirtualListRef> },
+  props: VirtualListProps<T> & {
+    ref?: Ref<VirtualListRef>;
+  },
 ) => ReactNode;

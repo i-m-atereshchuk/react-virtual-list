@@ -1,22 +1,22 @@
 import {
   forwardRef,
+  useMemo,
+  useRef,
   type CSSProperties,
   type ReactNode,
   type Ref,
-  useRef,
+  type UIEvent,
 } from "react";
 
 import { MeasureRow } from "./MeasureRow";
 import { VirtualListSizer } from "./VirtualListSizer";
 
 import { useVirtualListHandle } from "../hooks/use-virtual-list-handle";
-
 import { useVirtualized } from "../hooks/use-virtualized";
 
-import { type SharedProps, type VirtualListRef } from "../types/List";
+import type { SharedProps, VirtualListRef } from "../types/List";
 
 export interface VirtualListViewProps<T> extends SharedProps {
-  ref?: Ref<VirtualListRef> | undefined;
   list: T[];
   viewPortHeight?: number;
   viewPortWidth?: number;
@@ -46,13 +46,19 @@ function VirtualListViewInner<T>(
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const style: CSSProperties = {
-    height: viewPortHeight,
-    width: viewPortWidth,
-    overflow: "auto",
-    boxSizing: "border-box",
-    position: "relative",
-  };
+  const viewPortSize =
+    orientation === "horizontal" ? viewPortWidth : viewPortHeight;
+
+  const style = useMemo<CSSProperties>(
+    () => ({
+      height: viewPortHeight,
+      width: viewPortWidth,
+      overflow: "auto",
+      boxSizing: "border-box",
+      position: "relative",
+    }),
+    [viewPortHeight, viewPortWidth],
+  );
 
   const {
     renderRange,
@@ -67,7 +73,7 @@ function VirtualListViewInner<T>(
     listSize: list.length,
     estimatedRowSize,
     orientation,
-    viewPortSize: orientation === "horizontal" ? viewPortWidth : viewPortHeight,
+    viewPortSize,
     overscan,
     onReachEnd,
     onReachStart,
@@ -86,18 +92,22 @@ function VirtualListViewInner<T>(
 
   const children: ReactNode[] = [];
 
-  for (let i = startIndex; i < endIndex; i++) {
-    const listItem = list[i];
+  for (let index = startIndex; index < endIndex; index++) {
+    const item = list[index];
+
+    if (item === undefined) {
+      continue;
+    }
 
     children.push(
       <MeasureRow
-        key={keyExtractor(listItem, i)}
-        index={i}
-        offset={getOffset(i)}
+        key={keyExtractor(item, index)}
+        index={index}
+        offset={getOffset(index)}
         observeRow={observeRow}
         orientation={orientation}
       >
-        {renderItem(listItem, i)}
+        {renderItem(item, index)}
       </MeasureRow>,
     );
   }
@@ -110,22 +120,25 @@ function VirtualListViewInner<T>(
       data-react-virtual-list="list"
       role="list"
       aria-busy={isLoading}
-      onScroll={(event) => {
+      onScroll={(event: UIEvent<HTMLDivElement>) => {
+        const target = event.currentTarget;
+
         handleScroll(
-          orientation === "horizontal"
-            ? event.currentTarget.scrollLeft
-            : event.currentTarget.scrollTop,
+          orientation === "horizontal" ? target.scrollLeft : target.scrollTop,
         );
 
         onScroll?.(event);
       }}
     >
       {children}
+
       <VirtualListSizer totalSize={totalSize} orientation={orientation} />
     </div>
   );
 }
 
 export const VirtualListView = forwardRef(VirtualListViewInner) as <T>(
-  props: VirtualListViewProps<T> & { ref?: Ref<VirtualListRef> },
+  props: VirtualListViewProps<T> & {
+    ref?: Ref<VirtualListRef>;
+  },
 ) => ReactNode;

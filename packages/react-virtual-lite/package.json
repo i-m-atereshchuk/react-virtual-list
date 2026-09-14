@@ -50,7 +50,8 @@
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "prepack": "node ../../scripts/copy-readme.mjs ."
   },
   "peerDependencies": {
     "react": ">=18",

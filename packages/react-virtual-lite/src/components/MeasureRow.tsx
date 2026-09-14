@@ -23,22 +23,15 @@ function MeasureRowComponent({
   orientation = "vertical",
 }: PropsWithChildren<MeasureRowProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const vertical = orientation === "vertical";
 
-  const style: CSSProperties =
-    orientation === "vertical"
-      ? {
-          position: "absolute",
-          left: 0,
-          right: 0,
-          transform: `translateY(${offset}px)`,
-        }
-      : {
-          position: "absolute",
-          width: "max-content",
-          top: 0,
-          bottom: 0,
-          transform: `translateX(${offset}px)`,
-        };
+  const style: CSSProperties = {
+    position: "absolute",
+    transform: `translate${vertical ? "Y" : "X"}(${offset}px)`,
+    ...(vertical
+      ? { left: 0, right: 0 }
+      : { top: 0, bottom: 0, width: "max-content" }),
+  };
 
   useLayoutEffect(() => {
     const measureRow = containerRef.current;
