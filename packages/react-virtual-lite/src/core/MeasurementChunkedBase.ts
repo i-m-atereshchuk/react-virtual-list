@@ -10,6 +10,7 @@ import {
 } from "./FenwickTree";
 
 import { TotalScrollSize } from "./TotalScrollSize";
+import { ObservableBase } from "./ObservableBase";
 
 export const SIZE_SCALE = 64;
 export const SIZE_EPSILON = SIZE_SCALE / 2;
@@ -22,10 +23,9 @@ interface SizeChunk {
 }
 
 export abstract class MeasurementChunkedBase
+  extends ObservableBase
   implements CalculationNode, Measurement
 {
-  private listeners = new Set<() => void>();
-
   protected pendingSizes = new Map<number, number>();
 
   protected listSize: number;
@@ -38,11 +38,11 @@ export abstract class MeasurementChunkedBase
 
   protected total: TotalScrollSize;
 
-  protected version = -1;
-
   protected highestBit = 0;
 
   constructor(listSize: number) {
+    super();
+
     this.listSize = listSize;
 
     this.total = new TotalScrollSize(0);
@@ -91,18 +91,6 @@ export abstract class MeasurementChunkedBase
 
   getTotal(): number {
     return this.toExternal(this.total.getTotal());
-  }
-
-  getVersion(): number {
-    return this.version;
-  }
-
-  subscribe(callback: () => void): void {
-    this.listeners.add(callback);
-  }
-
-  unsubscribe(callback: () => void): void {
-    this.listeners.delete(callback);
   }
 
   invalidateCache(): void {}
@@ -322,16 +310,6 @@ export abstract class MeasurementChunkedBase
 
   protected updateHighestBit(): void {
     this.highestBit = fenwickHighestBit(this.chunkOffsets.length);
-  }
-
-  protected nextVersion(): void {
-    this.version += 1;
-  }
-
-  protected notify(): void {
-    for (const callback of this.listeners) {
-      callback();
-    }
   }
 
   protected toInternal(value: number): number {

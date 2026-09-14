@@ -1,15 +1,14 @@
 import { type CalculationNode } from "../types/CalculationNode";
+import { ObservableBase } from "./ObservableBase";
 
-export class FrameScheduler {
+export class FrameScheduler extends ObservableBase {
   private frameRef: ReturnType<typeof requestAnimationFrame> | null = null;
-  private listeners = new Set<() => void>();
   private nodeListeners: (() => void)[];
   private nodes: CalculationNode[];
   private minDirtyPublisherIndex = Infinity;
 
-  version = -1;
-
   constructor(nodes: CalculationNode[]) {
+    super();
     this.nodes = nodes;
     this.subscribe = this.subscribe.bind(this);
     this.getVersion = this.getVersion.bind(this);
@@ -57,21 +56,15 @@ export class FrameScheduler {
   }
 
   private commit() {
-    this.version += 1;
+    this.nextVersion();
 
-    for (const callback of this.listeners) {
-      callback();
-    }
+    this.notify();
   }
 
   subscribe(listener: () => void) {
-    this.listeners.add(listener);
+    super.subscribe(listener);
 
-    return () => this.listeners.delete(listener);
-  }
-
-  getVersion() {
-    return this.version;
+    return () => super.unsubscribe(listener);
   }
 
   connect() {
