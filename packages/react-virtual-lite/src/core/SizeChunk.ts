@@ -17,8 +17,8 @@ export class SizeChunk implements SizesChunkStore {
     this.capacity = capacity;
     this.length = 0;
     this.total = 0;
-    this.sizes = new Int8Array(capacity);
-    this.type = 0;
+    this.sizes = new Int16Array(capacity);
+    this.type = 1;
   }
 
   setSize(index: number, value: number): void {
