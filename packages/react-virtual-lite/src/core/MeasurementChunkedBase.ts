@@ -11,16 +11,11 @@ import {
 
 import { TotalScrollSize } from "./TotalScrollSize";
 import { ObservableBase } from "./ObservableBase";
+import { SizeChunk } from "./SizeChunk";
 
 export const SIZE_SCALE = 64;
 export const SIZE_EPSILON = SIZE_SCALE / 2;
 export const CHUNK_SIZE = 64;
-
-interface SizeChunk {
-  sizes: Int32Array;
-  length: number;
-  total: number;
-}
 
 export abstract class MeasurementChunkedBase
   extends ObservableBase
@@ -84,7 +79,7 @@ export abstract class MeasurementChunkedBase
     let localOffset = 0;
 
     for (let i = 0; i < localIndex; i++) {
-      localOffset += chunk.sizes[i];
+      localOffset += chunk.getSize(i);
     }
 
     return this.toExternal(previousChunksTotal + localOffset);
@@ -117,11 +112,9 @@ export abstract class MeasurementChunkedBase
       const start = lastChunk.length;
       const end = start + addCount;
 
-      lastChunk.sizes.fill(size, start, end);
-
-      lastChunk.length = end;
-
-      lastChunk.total += addCount * size;
+      for (let i = start; i < end; i++) {
+        lastChunk.setSize(i, size);
+      }
 
       this.materializedRowCount += addCount;
 
@@ -131,15 +124,13 @@ export abstract class MeasurementChunkedBase
     while (remaining > 0) {
       const length = Math.min(CHUNK_SIZE, remaining);
 
-      const sizes = new Int32Array(CHUNK_SIZE);
+      const chunk = new SizeChunk(size, CHUNK_SIZE);
 
-      sizes.fill(size, 0, length);
+      for (let i = 0; i < length; i++) {
+        chunk.setSize(i, size);
+      }
 
-      this.chunks.push({
-        sizes,
-        length,
-        total: length * size,
-      });
+      this.chunks.push(chunk);
 
       this.materializedRowCount += length;
 
@@ -184,19 +175,7 @@ export abstract class MeasurementChunkedBase
 
     const partialChunk = this.chunks[partialChunkIndex];
 
-    let removedFromPartial = 0;
-
-    for (let i = remainder; i < partialChunk.length; i++) {
-      removedFromPartial += partialChunk.sizes[i];
-    }
-
-    partialChunk.sizes.fill(0, remainder, partialChunk.length);
-
-    partialChunk.length = remainder;
-
-    partialChunk.total -= removedFromPartial;
-
-    removedTotal += removedFromPartial;
+    removedTotal += partialChunk.truncate(remainder);
 
     for (let i = partialChunkIndex + 1; i < this.chunks.length; i++) {
       removedTotal += this.chunks[i].total;
@@ -214,7 +193,7 @@ export abstract class MeasurementChunkedBase
 
     const localIndex = index % CHUNK_SIZE;
 
-    return this.chunks[chunkIndex].sizes[localIndex];
+    return this.chunks[chunkIndex].getSize(localIndex);
   }
 
   protected commitInternalSize(
@@ -230,13 +209,11 @@ export abstract class MeasurementChunkedBase
 
     const chunk = this.chunks[chunkIndex];
 
-    const prevSize = chunk.sizes[localIndex];
+    const prevSize = chunk.getSize(localIndex);
 
     const difference = nextSize - prevSize;
 
-    chunk.sizes[localIndex] = nextSize;
-
-    chunk.total += difference;
+    chunk.setSize(localIndex, nextSize);
 
     fenwickAdd(this.chunkOffsets, chunkIndex + 1, difference);
 
@@ -275,7 +252,7 @@ export abstract class MeasurementChunkedBase
     let localOffset = 0;
 
     for (let localIndex = 0; localIndex < chunk.length; localIndex++) {
-      const nextOffset = localOffset + chunk.sizes[localIndex];
+      const nextOffset = localOffset + chunk.getSize(localIndex);
 
       if (offsetInsideChunk < nextOffset) {
         return chunkIndex * CHUNK_SIZE + localIndex;
